@@ -1,5 +1,6 @@
 package com.app.obsession.member.domain;
 
+import com.app.obsession.global.entity.BaseAuditEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -9,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "v1_members")
 @Entity
-public class Member {
+public class Member extends BaseAuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

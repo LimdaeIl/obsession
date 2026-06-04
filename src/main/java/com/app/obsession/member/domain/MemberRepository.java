@@ -1,5 +1,8 @@
 package com.app.obsession.member.domain;
 
-public class MemberRepository {
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface MemberRepository extends JpaRepository<Member, Long> {
 
 }
+
