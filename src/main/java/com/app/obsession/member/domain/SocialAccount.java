@@ -1,0 +1,76 @@
+package com.app.obsession.member.domain;
+
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(
+        name = "v1_social_accounts",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_social_provider_provider_id",
+                        columnNames = {"social_provider", "social_provider_id"}
+                ),
+                @UniqueConstraint(
+                        name = "uk_social_member_provider",
+                        columnNames = {"member_id", "social_provider"}
+                )
+        }
+)
+@Entity
+public class SocialAccount {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "social_account_id", updatable = false, nullable = false)
+    private Long id;
+
+    @Column(name = "member_id", nullable = false)
+    private Long memberId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "social_provider", nullable = false, length = 20)
+    private SocialProvider provider;
+
+    @Column(name = "social_provider_id", nullable = false, length = 100)
+    private String providerId;
+
+    private SocialAccount(Long memberId, SocialProvider provider, String providerId) {
+        this.memberId = memberId;
+        this.provider = provider;
+        this.providerId = providerId;
+    }
+
+    public static SocialAccount create(Long memberId, SocialProvider provider, String providerId) {
+        validate(memberId, provider, providerId);
+        return new SocialAccount(memberId, provider, providerId);
+    }
+
+    public void updateProviderId(String providerId) {
+        if (providerId == null || providerId.isBlank()) {
+            throw new IllegalArgumentException("소셜 Provider ID는 필수입니다.");
+        }
+        this.providerId = providerId;
+    }
+
+    public boolean isProvider(SocialProvider provider) {
+        return this.provider == provider;
+    }
+
+    private static void validate(Long memberId, SocialProvider provider, String providerId) {
+        if (memberId == null) {
+            throw new IllegalArgumentException("회원 ID는 필수입니다.");
+        }
+
+        if (provider == null) {
+            throw new IllegalArgumentException("소셜 Provider는 필수입니다.");
+        }
+
+        if (providerId == null || providerId.isBlank()) {
+            throw new IllegalArgumentException("소셜 Provider ID는 필수입니다.");
+        }
+    }
+}
