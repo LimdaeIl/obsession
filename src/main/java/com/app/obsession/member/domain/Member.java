@@ -1,7 +1,15 @@
 package com.app.obsession.member.domain;
 
 import com.app.obsession.global.entity.BaseAuditEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -46,8 +54,34 @@ public class Member extends BaseAuditEntity {
         return new Member(profile, password, null, MemberRole.CUSTOMER);
     }
 
-    public static Member createBusiness(Profile profile, Password password, CompanyInfo companyInfo) {
-        return new Member(profile, password, companyInfo, MemberRole.BUSINESS);
+    public static Member createCustomer(
+            String name,
+            String email,
+            String phone,
+            String encodedPassword
+    ) {
+        return new Member(
+                new Profile(name, email, phone),
+                Password.encoded(encodedPassword),
+                null,
+                MemberRole.CUSTOMER
+        );
+    }
+
+    public static Member createBusiness(
+            String name,
+            String email,
+            String phone,
+            String encodedPassword,
+            String companyName,
+            String brn
+    ) {
+        return new Member(
+                new Profile(name, email, phone),
+                Password.encoded(encodedPassword),
+                new CompanyInfo(companyName, brn),
+                MemberRole.BUSINESS
+        );
     }
 
     public void changeProfile(String name, String phone) {
