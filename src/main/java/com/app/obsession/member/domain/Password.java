@@ -1,5 +1,7 @@
 package com.app.obsession.member.domain;
 
+import com.app.obsession.member.exception.MemberErrorCode;
+import com.app.obsession.member.exception.MemberException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.AccessLevel;
@@ -20,7 +22,7 @@ public class Password {
 
     public static Password encoded(String encodedPassword) {
         if (encodedPassword == null || encodedPassword.isBlank()) {
-            throw new IllegalArgumentException("비밀번호는 필수입니다.");
+            throw new MemberException(MemberErrorCode.INVALID_MEMBER_PASSWORD);
         }
         return new Password(encodedPassword);
     }

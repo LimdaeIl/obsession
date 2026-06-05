@@ -1,5 +1,8 @@
 package com.app.obsession.member.domain;
 
+import com.app.obsession.global.exception.AppException;
+import com.app.obsession.member.exception.MemberErrorCode;
+import com.app.obsession.member.exception.MemberException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.AccessLevel;
@@ -33,15 +36,16 @@ public class Profile {
 
     private void validate(String name, String email, String phone) {
         if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("이름은 필수입니다.");
+            throw new MemberException(MemberErrorCode.INVALID_MEMBER_NAME);
         }
 
         if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException("이메일은 필수입니다.");
+            throw new MemberException(MemberErrorCode.INVALID_MEMBER_EMAIL);
         }
 
         if (phone == null || phone.isBlank()) {
-            throw new IllegalArgumentException("전화번호는 필수입니다.");
+            throw new MemberException(MemberErrorCode.INVALID_MEMBER_PHONE);
         }
     }
 }
+
