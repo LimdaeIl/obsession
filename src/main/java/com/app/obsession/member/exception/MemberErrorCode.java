@@ -22,7 +22,11 @@ public enum MemberErrorCode implements ErrorCode {
     INVALID_COMPANY_BRN(HttpStatus.BAD_REQUEST, "회원: 사업자등록번호는 필수입니다."),
     INVALID_SOCIAL_MEMBER_ID(HttpStatus.BAD_REQUEST, "회원: 회원 ID는 필수입니다."),
     INVALID_SOCIAL_PROVIDER(HttpStatus.BAD_REQUEST, "회원: 소셜 Provider는 필수입니다."),
-    INVALID_SOCIAL_PROVIDER_ID(HttpStatus.BAD_REQUEST, "회원: 소셜 Provider ID는 필수입니다."),;
+    INVALID_SOCIAL_PROVIDER_ID(HttpStatus.BAD_REQUEST, "회원: 소셜 Provider ID는 필수입니다."),
+    INVALID_LOGIN(HttpStatus.UNAUTHORIZED, "회원: 이메일 또는 비밀번호가 올바르지 않습니다."),
+    SOCIAL_ONLY_MEMBER(HttpStatus.BAD_REQUEST, "회원: 소셜 로그인 전용 회원입니다."),;
+
+
     private final HttpStatus httpStatus;
     private final String messageTemplate;
 
