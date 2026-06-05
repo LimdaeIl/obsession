@@ -24,3 +24,8 @@ logging:
   level:
     org.hibernate.SQL: debug
     org.hibernate.orm.jdbc.bind: trace
+
+
+jwt:
+  secret: "obsession-obsession-obsession-obsession-obsession-secret-key-123456789"
+  access-token-expiration-millis: 3600000
