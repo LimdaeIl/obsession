@@ -8,8 +8,15 @@ public interface ErrorCode {
 
     String message();
 
+    default String code() {
+        return this instanceof Enum<?> enumCode
+                ? enumCode.name()
+                : this.getClass().getSimpleName();
+    }
+
     default String format(Object... args) {
-        return String.format(message(), args);
+        return args == null || args.length == 0
+                ? message()
+                : String.format(message(), args);
     }
 }
-

@@ -6,7 +6,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -29,13 +28,12 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         ErrorCode code = ex.getErrorCode();
-        String title = ((Enum<?>) code).name();
 
         return error(
-                code.status(),
-                title,
+                code,
                 ex.getMessage(),
                 request,
+                ex.getParameters(),
                 null
         );
     }
@@ -106,7 +104,7 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest request
     ) {
-        return appError(AppErrorCode.ACCESS_DENIED, request, "권한이 없습니다.");
+        return appError(AppErrorCode.ACCESS_DENIED, request);
     }
 
     @ExceptionHandler(AuthenticationException.class)
@@ -114,7 +112,7 @@ public class GlobalExceptionHandler {
             AuthenticationException ex,
             HttpServletRequest request
     ) {
-        return appError(AppErrorCode.UNAUTHORIZED, request, "인증이 필요합니다.");
+        return appError(AppErrorCode.UNAUTHORIZED, request);
     }
 
     @ExceptionHandler(Exception.class)
@@ -130,15 +128,7 @@ public class GlobalExceptionHandler {
             AppErrorCode code,
             HttpServletRequest request
     ) {
-        return appError(code, request, code.message(), null);
-    }
-
-    private ResponseEntity<ErrorResponse> appError(
-            AppErrorCode code,
-            HttpServletRequest request,
-            String detail
-    ) {
-        return appError(code, request, detail, null);
+        return error(code, code.message(), request, null, null);
     }
 
     private ResponseEntity<ErrorResponse> appError(
@@ -146,41 +136,27 @@ public class GlobalExceptionHandler {
             HttpServletRequest request,
             List<ErrorResponse.FieldError> errors
     ) {
-        return appError(code, request, code.message(), errors);
-    }
-
-    private ResponseEntity<ErrorResponse> appError(
-            AppErrorCode code,
-            HttpServletRequest request,
-            String detail,
-            List<ErrorResponse.FieldError> errors
-    ) {
-        String title = code.name();
-
-        return error(
-                code.status(),
-                title,
-                detail,
-                request,
-                errors
-        );
+        return error(code, code.message(), request, null, errors);
     }
 
     private ResponseEntity<ErrorResponse> error(
-            HttpStatus status,
-            String title,
+            ErrorCode code,
             String detail,
             HttpServletRequest request,
+            List<Object> parameters,
             List<ErrorResponse.FieldError> errors
     ) {
-        return ResponseEntity.status(status)
+        String title = code.code();
+
+        return ResponseEntity.status(code.status())
                 .body(ErrorResponse.problem(
                         problemType(title),
                         title,
-                        status,
+                        code.status(),
                         detail,
                         request.getRequestURI(),
                         title,
+                        parameters,
                         errors
                 ));
     }
@@ -189,5 +165,3 @@ public class GlobalExceptionHandler {
         return PROBLEM_BASE_URI + title.toLowerCase().replace('_', '-');
     }
 }
-
-
