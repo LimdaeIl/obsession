@@ -1,6 +1,6 @@
 package com.app.obsession.member.application.port;
 
-public interface PasswordEncoder {
+public interface PasswordEncryptor {
 
     String encode(String rawPassword);
 

@@ -1,5 +1,6 @@
 package com.app.obsession.member.domain;
 
+import com.app.obsession.member.application.port.PasswordEncryptor;
 import com.app.obsession.member.exception.MemberErrorCode;
 import com.app.obsession.member.exception.MemberException;
 import jakarta.persistence.Column;
@@ -25,6 +26,10 @@ public class Password {
             throw new MemberException(MemberErrorCode.INVALID_MEMBER_PASSWORD);
         }
         return new Password(encodedPassword);
+    }
+
+    public boolean matches(String rawPassword, PasswordEncryptor passwordEncoder) {
+        return passwordEncoder.matches(rawPassword, this.value);
     }
 
     public static Password empty() {

@@ -4,7 +4,7 @@ import static com.app.obsession.member.exception.MemberErrorCode.DUPLICATE_EMAIL
 
 import com.app.obsession.member.application.command.SignupCommand;
 import com.app.obsession.member.application.port.MemberRepository;
-import com.app.obsession.member.application.port.PasswordEncoder;
+import com.app.obsession.member.application.port.PasswordEncryptor;
 import com.app.obsession.member.domain.Member;
 import com.app.obsession.member.exception.MemberException;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class SignupService {
 
     private final MemberRepository memberRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final PasswordEncryptor passwordEncryptor;
 
     @Transactional
     public Long signup(SignupCommand command) {
@@ -25,7 +25,7 @@ public class SignupService {
             throw new MemberException(DUPLICATE_EMAIL, command.email());
         }
 
-        String encodedPassword = passwordEncoder.encode(command.password());
+        String encodedPassword = passwordEncryptor.encode(command.password());
 
         Member member = Member.createCustomer(
                 command.name(),
