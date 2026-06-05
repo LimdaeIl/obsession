@@ -1,5 +1,7 @@
 package com.app.obsession.member.domain;
 
+import com.app.obsession.member.exception.MemberErrorCode;
+import com.app.obsession.member.exception.MemberException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.AccessLevel;
@@ -25,11 +27,11 @@ public class CompanyInfo {
 
     private void validate(String companyName, String brn) {
         if (companyName == null || companyName.isBlank()) {
-            throw new IllegalArgumentException("회사명은 필수입니다.");
+            throw new MemberException(MemberErrorCode.INVALID_COMPANY_NAME);
         }
 
         if (brn == null || brn.isBlank()) {
-            throw new IllegalArgumentException("사업자등록번호는 필수입니다.");
+            throw new MemberException(MemberErrorCode.INVALID_COMPANY_BRN);
         }
     }
 }

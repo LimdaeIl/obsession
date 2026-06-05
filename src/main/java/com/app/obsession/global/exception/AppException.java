@@ -1,5 +1,7 @@
 package com.app.obsession.global.exception;
 
+import java.util.Arrays;
+import java.util.List;
 import lombok.Getter;
 
 @Getter
@@ -11,19 +13,16 @@ public class AppException extends RuntimeException {
     public AppException(ErrorCode errorCode) {
         super(errorCode.message());
         this.errorCode = errorCode;
-        this.args = null;
+        this.args = new Object[0];
     }
 
     public AppException(ErrorCode errorCode, Object... args) {
-        super(errorCode.message());
+        super(errorCode.format(args));
         this.errorCode = errorCode;
-        this.args = args;
+        this.args = args == null ? new Object[0] : args;
     }
 
-    public AppException(String message, ErrorCode errorCode, Object[] args) {
-        super(message);
-        this.errorCode = errorCode;
-        this.args = args;
+    public List<Object> getParameters() {
+        return Arrays.asList(args);
     }
 }
-

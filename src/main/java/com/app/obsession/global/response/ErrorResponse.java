@@ -6,12 +6,13 @@ import org.springframework.http.HttpStatus;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ErrorResponse(
-        String type,        // problem type URI
-        String title,       // 에러 이름 (ENUM name)
-        int status,         // HTTP status code
-        String detail,      // 사람이 읽을 메시지
-        String instance,    // 요청 URI
-        String errorCode,   // 내부 에러 코드 (ENUM name or A001 등)
+        String type,
+        String title,
+        int status,
+        String detail,
+        String instance,
+        String errorCode,
+        List<Object> parameters,
         List<FieldError> errors
 ) {
 
@@ -22,6 +23,7 @@ public record ErrorResponse(
             String detail,
             String instance,
             String errorCode,
+            List<Object> parameters,
             List<FieldError> errors
     ) {
         return new ErrorResponse(
@@ -31,8 +33,13 @@ public record ErrorResponse(
                 detail,
                 instance,
                 errorCode,
-                (errors == null || errors.isEmpty()) ? null : errors
+                emptyToNull(parameters),
+                emptyToNull(errors)
         );
+    }
+
+    private static <T> List<T> emptyToNull(List<T> values) {
+        return values == null || values.isEmpty() ? null : values;
     }
 
     public record FieldError(String field, String reason) {

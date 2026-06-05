@@ -1,5 +1,7 @@
 package com.app.obsession.global.response;
 
+import static com.app.obsession.global.util.TimeZones.SEOUL;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.LocalDateTime;
 
@@ -12,33 +14,23 @@ public record CommonResponse<T>(
         LocalDateTime timestamp
 ) {
 
-    public static <T> CommonResponse<T> ok(T data) {
+    public static <T> CommonResponse<T> success(T data) {
         return new CommonResponse<>(
                 true,
                 200,
                 "요청이 성공적으로 처리되었습니다.",
                 data,
-                LocalDateTime.now()
+                LocalDateTime.now(SEOUL)
         );
     }
 
-    public static <T> CommonResponse<T> ok(String message, T data) {
+    public static <T> CommonResponse<T> success(String message, T data) {
         return new CommonResponse<>(
                 true,
                 200,
                 message,
                 data,
-                LocalDateTime.now()
-        );
-    }
-
-    public static CommonResponse<Void> ok() {
-        return new CommonResponse<>(
-                true,
-                200,
-                "요청이 성공적으로 처리되었습니다.",
-                null,
-                LocalDateTime.now()
+                LocalDateTime.now(SEOUL)
         );
     }
 
@@ -48,7 +40,7 @@ public record CommonResponse<T>(
                 201,
                 "리소스가 생성되었습니다.",
                 data,
-                LocalDateTime.now()
+                LocalDateTime.now(SEOUL)
         );
     }
 
@@ -58,7 +50,7 @@ public record CommonResponse<T>(
                 201,
                 message,
                 data,
-                LocalDateTime.now()
+                LocalDateTime.now(SEOUL)
         );
     }
 
@@ -68,7 +60,7 @@ public record CommonResponse<T>(
                 204,
                 "요청이 성공적으로 처리되었습니다.",
                 null,
-                LocalDateTime.now()
+                LocalDateTime.now(SEOUL)
         );
     }
 }

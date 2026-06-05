@@ -1,6 +1,8 @@
 package com.app.obsession.member.domain;
 
 import com.app.obsession.global.entity.BaseAuditEntity;
+import com.app.obsession.member.exception.MemberErrorCode;
+import com.app.obsession.member.exception.MemberException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -60,7 +62,7 @@ public class SocialAccount extends BaseAuditEntity {
 
     public void updateProviderId(String providerId) {
         if (providerId == null || providerId.isBlank()) {
-            throw new IllegalArgumentException("소셜 Provider ID는 필수입니다.");
+            throw new MemberException(MemberErrorCode.INVALID_SOCIAL_PROVIDER_ID);
         }
         this.providerId = providerId;
     }
@@ -71,15 +73,15 @@ public class SocialAccount extends BaseAuditEntity {
 
     private static void validate(Long memberId, SocialProvider provider, String providerId) {
         if (memberId == null) {
-            throw new IllegalArgumentException("회원 ID는 필수입니다.");
+            throw new MemberException(MemberErrorCode.INVALID_SOCIAL_MEMBER_ID);
         }
 
         if (provider == null) {
-            throw new IllegalArgumentException("소셜 Provider는 필수입니다.");
+            throw new MemberException(MemberErrorCode.INVALID_SOCIAL_PROVIDER);
         }
 
         if (providerId == null || providerId.isBlank()) {
-            throw new IllegalArgumentException("소셜 Provider ID는 필수입니다.");
+            throw new MemberException(MemberErrorCode.INVALID_SOCIAL_PROVIDER_ID);
         }
     }
 }
