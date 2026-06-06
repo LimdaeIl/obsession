@@ -14,24 +14,20 @@ import org.junit.jupiter.api.Test;
 
 class JwtProviderTest {
 
-    private JwtProvider jwtProvider;
-    private Clock clock;
+    private static final String SECRET =
+            "obsession-obsession-obsession-obsession-obsession-secret-key-123456789";
 
+    private JwtProvider jwtProvider;
 
     @BeforeEach
     void setUp() {
-        clock = Clock.fixed(
-                Instant.parse("2026-01-01T00:00:00Z"),
-                ZoneOffset.UTC
-        );
-
         JwtProperties jwtProperties = new JwtProperties(
-                "obsession-obsession-obsession-obsession-obsession-secret-key-123456789",
+                SECRET,
                 1_800_000L,
                 1_209_600_000L
         );
 
-        jwtProvider = new JwtProvider(jwtProperties, clock);
+        jwtProvider = new JwtProvider(jwtProperties, fixedClock("2026-01-01T00:00:00Z"));
         jwtProvider.init();
     }
 
@@ -65,9 +61,7 @@ class JwtProviderTest {
     @Test
     @DisplayName("Access Token을 Refresh Token으로 파싱하면 INVALID_REFRESH_TOKEN 예외")
     void parseAccessTokenAsRefreshToken() {
-        JwtClaims claims = new JwtClaims(1L, "CUSTOMER");
-
-        String accessToken = jwtProvider.createAccessToken(claims);
+        String accessToken = jwtProvider.createAccessToken(new JwtClaims(1L, "CUSTOMER"));
 
         assertThatThrownBy(() -> jwtProvider.parseRefreshPayload(accessToken))
                 .isInstanceOf(AuthException.class)
@@ -78,9 +72,7 @@ class JwtProviderTest {
     @Test
     @DisplayName("Refresh Token을 Access Token으로 파싱하면 INVALID_ACCESS_TOKEN 예외")
     void parseRefreshTokenAsAccessToken() {
-        JwtClaims claims = new JwtClaims(1L, "CUSTOMER");
-
-        String refreshToken = jwtProvider.createRefreshToken(claims);
+        String refreshToken = jwtProvider.createRefreshToken(new JwtClaims(1L, "CUSTOMER"));
 
         assertThatThrownBy(() -> jwtProvider.parseAccessPayload(refreshToken))
                 .isInstanceOf(AuthException.class)
@@ -91,9 +83,7 @@ class JwtProviderTest {
     @Test
     @DisplayName("위조된 토큰은 INVALID_ACCESS_TOKEN 예외")
     void parseTamperedAccessToken() {
-        JwtClaims claims = new JwtClaims(1L, "CUSTOMER");
-
-        String accessToken = jwtProvider.createAccessToken(claims);
+        String accessToken = jwtProvider.createAccessToken(new JwtClaims(1L, "CUSTOMER"));
         String tamperedToken = accessToken + "tampered";
 
         assertThatThrownBy(() -> jwtProvider.parseAccessPayload(tamperedToken))
@@ -106,27 +96,23 @@ class JwtProviderTest {
     @DisplayName("만료된 Access Token은 EXPIRED_ACCESS_TOKEN 예외")
     void parseExpiredAccessToken() {
         JwtProperties jwtProperties = new JwtProperties(
-                "obsession-obsession-obsession-obsession-obsession-secret-key-123456789",
-                1L,
+                SECRET,
+                1_000L,
                 1_209_600_000L
         );
 
-        Clock issuedClock = Clock.fixed(
-                Instant.parse("2026-01-01T00:00:00Z"),
-                ZoneOffset.UTC
+        JwtProvider issuedProvider = new JwtProvider(
+                jwtProperties,
+                fixedClock("2026-01-01T00:00:00Z")
         );
-
-        Clock expiredClock = Clock.fixed(
-                Instant.parse("2026-01-01T00:00:01Z"),
-                ZoneOffset.UTC
-        );
-
-        JwtProvider issuedProvider = new JwtProvider(jwtProperties, issuedClock);
         issuedProvider.init();
 
         String accessToken = issuedProvider.createAccessToken(new JwtClaims(1L, "CUSTOMER"));
 
-        JwtProvider expiredProvider = new JwtProvider(jwtProperties, expiredClock);
+        JwtProvider expiredProvider = new JwtProvider(
+                jwtProperties,
+                fixedClock("2026-01-01T00:00:02Z")
+        );
         expiredProvider.init();
 
         assertThatThrownBy(() -> expiredProvider.parseAccessPayload(accessToken))
@@ -139,27 +125,23 @@ class JwtProviderTest {
     @DisplayName("만료된 Refresh Token은 EXPIRED_REFRESH_TOKEN 예외")
     void parseExpiredRefreshToken() {
         JwtProperties jwtProperties = new JwtProperties(
-                "obsession-obsession-obsession-obsession-obsession-secret-key-123456789",
+                SECRET,
                 1_800_000L,
-                1L
+                1_000L
         );
 
-        Clock issuedClock = Clock.fixed(
-                Instant.parse("2026-01-01T00:00:00Z"),
-                ZoneOffset.UTC
+        JwtProvider issuedProvider = new JwtProvider(
+                jwtProperties,
+                fixedClock("2026-01-01T00:00:00Z")
         );
-
-        Clock expiredClock = Clock.fixed(
-                Instant.parse("2026-01-01T00:00:01Z"),
-                ZoneOffset.UTC
-        );
-
-        JwtProvider issuedProvider = new JwtProvider(jwtProperties, issuedClock);
         issuedProvider.init();
 
         String refreshToken = issuedProvider.createRefreshToken(new JwtClaims(1L, "CUSTOMER"));
 
-        JwtProvider expiredProvider = new JwtProvider(jwtProperties, expiredClock);
+        JwtProvider expiredProvider = new JwtProvider(
+                jwtProperties,
+                fixedClock("2026-01-01T00:00:02Z")
+        );
         expiredProvider.init();
 
         assertThatThrownBy(() -> expiredProvider.parseRefreshPayload(refreshToken))
@@ -171,13 +153,14 @@ class JwtProviderTest {
     @Test
     @DisplayName("Access Token의 남은 만료 시간을 계산한다")
     void getRemainingExpirationMillisFromAccessToken() {
-        JwtClaims claims = new JwtClaims(1L, "CUSTOMER");
-
-        String accessToken = jwtProvider.createAccessToken(claims);
+        String accessToken = jwtProvider.createAccessToken(new JwtClaims(1L, "CUSTOMER"));
 
         long remainingMillis = jwtProvider.getRemainingExpirationMillisFromAccessToken(accessToken);
 
-        assertThat(remainingMillis).isPositive();
-        assertThat(remainingMillis).isLessThanOrEqualTo(1_800_000L);
+        assertThat(remainingMillis).isEqualTo(1_800_000L);
+    }
+
+    private Clock fixedClock(String instant) {
+        return Clock.fixed(Instant.parse(instant), ZoneOffset.UTC);
     }
 }

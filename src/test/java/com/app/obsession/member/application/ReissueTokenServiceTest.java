@@ -26,10 +26,9 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(MockitoExtension.class)
 class ReissueTokenServiceTest {
@@ -59,7 +58,7 @@ class ReissueTokenServiceTest {
     }
 
     @Test
-    @DisplayName("Refresh Token이 유효하고 Redis hash와 일치하면 새 AT/RT를 발급하고 새 RT hash를 저장한다")
+    @DisplayName("Refresh Token이 유효하고 저장소 회전에 성공하면 새 AT/RT를 발급한다")
     void reissue_success() {
         Long memberId = 1L;
         String oldRefreshToken = "old-refresh-token";
@@ -68,62 +67,61 @@ class ReissueTokenServiceTest {
         String newRefreshToken = "new-refresh-token";
         String newRefreshTokenHash = "new-refresh-token-hash";
 
-        Member member = Member.createCustomer(
-                "홍길동",
-                "test@test.com",
-                "01012345678",
-                "{bcrypt}encoded-password"
-        );
-
+        Member member = createMember();
         JwtPayload payload = new JwtPayload(memberId, "CUSTOMER", TokenType.REFRESH);
 
         when(jwtProvider.parseRefreshPayload(oldRefreshToken)).thenReturn(payload);
         when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
-        when(refreshTokenRepository.findHashByMemberId(memberId))
-                .thenReturn(Optional.of(oldRefreshTokenHash));
-        when(tokenHashUtil.sha256(oldRefreshToken)).thenReturn(oldRefreshTokenHash);
         when(jwtProvider.createAccessToken(any(JwtClaims.class))).thenReturn(newAccessToken);
         when(jwtProvider.createRefreshToken(any(JwtClaims.class))).thenReturn(newRefreshToken);
+        when(tokenHashUtil.sha256(oldRefreshToken)).thenReturn(oldRefreshTokenHash);
         when(tokenHashUtil.sha256(newRefreshToken)).thenReturn(newRefreshTokenHash);
         when(jwtProvider.getRefreshTokenExpirationMillis()).thenReturn(1_209_600_000L);
+        when(refreshTokenRepository.rotateIfMatches(
+                eq(memberId),
+                eq(oldRefreshTokenHash),
+                eq(newRefreshTokenHash),
+                eq(Duration.ofMillis(1_209_600_000L))
+        )).thenReturn(true);
 
         TokenResponse response = reissueTokenService.reissue(oldRefreshToken);
 
         assertThat(response.accessToken()).isEqualTo(newAccessToken);
         assertThat(response.refreshToken()).isEqualTo(newRefreshToken);
 
-        ArgumentCaptor<Duration> ttlCaptor = ArgumentCaptor.forClass(Duration.class);
-
-        verify(refreshTokenRepository).saveHash(
+        verify(refreshTokenRepository).rotateIfMatches(
                 eq(memberId),
+                eq(oldRefreshTokenHash),
                 eq(newRefreshTokenHash),
-                ttlCaptor.capture()
+                eq(Duration.ofMillis(1_209_600_000L))
         );
-
-        assertThat(ttlCaptor.getValue()).isEqualTo(Duration.ofMillis(1_209_600_000L));
     }
 
     @Test
-    @DisplayName("요청 RT hash가 Redis 저장 hash와 다르면 RT를 삭제하고 REUSED_REFRESH_TOKEN 예외를 던진다")
+    @DisplayName("Refresh Token 회전에 실패하면 RT를 삭제하고 REUSED_REFRESH_TOKEN 예외를 던진다")
     void reissue_reusedRefreshToken() {
         Long memberId = 1L;
         String refreshToken = "reused-refresh-token";
-        String savedHash = "saved-refresh-token-hash";
         String requestHash = "request-refresh-token-hash";
-
-        Member member = Member.createCustomer(
-                "홍길동",
-                "test@test.com",
-                "01012345678",
-                "{bcrypt}encoded-password"
-        );
+        String newAccessToken = "new-access-token";
+        String newRefreshToken = "new-refresh-token";
+        String newRefreshTokenHash = "new-refresh-token-hash";
 
         JwtPayload payload = new JwtPayload(memberId, "CUSTOMER", TokenType.REFRESH);
 
         when(jwtProvider.parseRefreshPayload(refreshToken)).thenReturn(payload);
-        when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
-        when(refreshTokenRepository.findHashByMemberId(memberId)).thenReturn(Optional.of(savedHash));
+        when(memberRepository.findById(memberId)).thenReturn(Optional.of(createMember()));
+        when(jwtProvider.createAccessToken(any(JwtClaims.class))).thenReturn(newAccessToken);
+        when(jwtProvider.createRefreshToken(any(JwtClaims.class))).thenReturn(newRefreshToken);
         when(tokenHashUtil.sha256(refreshToken)).thenReturn(requestHash);
+        when(tokenHashUtil.sha256(newRefreshToken)).thenReturn(newRefreshTokenHash);
+        when(jwtProvider.getRefreshTokenExpirationMillis()).thenReturn(1_209_600_000L);
+        when(refreshTokenRepository.rotateIfMatches(
+                eq(memberId),
+                eq(requestHash),
+                eq(newRefreshTokenHash),
+                eq(Duration.ofMillis(1_209_600_000L))
+        )).thenReturn(false);
 
         assertThatThrownBy(() -> reissueTokenService.reissue(refreshToken))
                 .isInstanceOf(AuthException.class)
@@ -134,23 +132,37 @@ class ReissueTokenServiceTest {
     }
 
     @Test
-    @DisplayName("Redis에 저장된 RT hash가 없으면 INVALID_REFRESH_TOKEN 예외를 던진다")
+    @DisplayName("Redis에 RT hash가 없으면 회전 실패로 보고 REUSED_REFRESH_TOKEN 예외를 던진다")
     void reissue_refreshTokenNotFoundInRedis() {
         Long memberId = 1L;
         String refreshToken = "refresh-token";
+        String refreshTokenHash = "refresh-token-hash";
+        String newAccessToken = "new-access-token";
+        String newRefreshToken = "new-refresh-token";
+        String newRefreshTokenHash = "new-refresh-token-hash";
 
         JwtPayload payload = new JwtPayload(memberId, "CUSTOMER", TokenType.REFRESH);
 
         when(jwtProvider.parseRefreshPayload(refreshToken)).thenReturn(payload);
-        when(memberRepository.findById(memberId)).thenReturn(Optional.of(
-                Member.createCustomer("홍길동", "test@test.com", "01012345678", "{bcrypt}password")
-        ));
-        when(refreshTokenRepository.findHashByMemberId(memberId)).thenReturn(Optional.empty());
+        when(memberRepository.findById(memberId)).thenReturn(Optional.of(createMember()));
+        when(jwtProvider.createAccessToken(any(JwtClaims.class))).thenReturn(newAccessToken);
+        when(jwtProvider.createRefreshToken(any(JwtClaims.class))).thenReturn(newRefreshToken);
+        when(tokenHashUtil.sha256(refreshToken)).thenReturn(refreshTokenHash);
+        when(tokenHashUtil.sha256(newRefreshToken)).thenReturn(newRefreshTokenHash);
+        when(jwtProvider.getRefreshTokenExpirationMillis()).thenReturn(1_209_600_000L);
+        when(refreshTokenRepository.rotateIfMatches(
+                eq(memberId),
+                eq(refreshTokenHash),
+                eq(newRefreshTokenHash),
+                eq(Duration.ofMillis(1_209_600_000L))
+        )).thenReturn(false);
 
         assertThatThrownBy(() -> reissueTokenService.reissue(refreshToken))
                 .isInstanceOf(AuthException.class)
                 .extracting("errorCode")
-                .isEqualTo(AuthErrorCode.INVALID_REFRESH_TOKEN);
+                .isEqualTo(AuthErrorCode.REUSED_REFRESH_TOKEN);
+
+        verify(refreshTokenRepository).deleteByMemberId(memberId);
     }
 
     @Test
@@ -158,17 +170,14 @@ class ReissueTokenServiceTest {
     void reissue_withdrawnMember() {
         Long memberId = 1L;
         String refreshToken = "refresh-token";
-        String refreshTokenHash = "refresh-token-hash";
 
-        Member member = Member.createCustomer("홍길동", "test@test.com", "01012345678", "{bcrypt}password");
+        Member member = createMember();
         member.withdraw();
 
         JwtPayload payload = new JwtPayload(memberId, "CUSTOMER", TokenType.REFRESH);
 
         when(jwtProvider.parseRefreshPayload(refreshToken)).thenReturn(payload);
         when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
-        when(refreshTokenRepository.findHashByMemberId(memberId)).thenReturn(Optional.of(refreshTokenHash));
-        when(tokenHashUtil.sha256(refreshToken)).thenReturn(refreshTokenHash);
 
         assertThatThrownBy(() -> reissueTokenService.reissue(refreshToken))
                 .isInstanceOf(MemberException.class)
@@ -176,6 +185,8 @@ class ReissueTokenServiceTest {
                 .isEqualTo(MemberErrorCode.WITHDRAWN_MEMBER);
 
         verify(refreshTokenRepository).deleteByMemberId(memberId);
+        verify(jwtProvider, never()).createAccessToken(any());
+        verify(jwtProvider, never()).createRefreshToken(any());
     }
 
     @Test
@@ -196,110 +207,80 @@ class ReissueTokenServiceTest {
     }
 
     @Test
-    @DisplayName("탈퇴 회원이 reissue 요청하면 새 토큰을 발급하지 않는다")
-    void reissue_withdrawnMember_doesNotIssueNewTokens() {
+    @DisplayName("회전 실패 시 새 토큰은 응답하지 않고 예외를 던진다")
+    void reissue_rotateFailed_doesNotReturnTokens() {
         Long memberId = 1L;
         String refreshToken = "refresh-token";
         String refreshTokenHash = "refresh-token-hash";
-
-        Member member = Member.createCustomer("홍길동", "test@test.com", "01012345678", "{bcrypt}password");
-        member.withdraw();
+        String newAccessToken = "new-access-token";
+        String newRefreshToken = "new-refresh-token";
+        String newRefreshTokenHash = "new-refresh-token-hash";
 
         JwtPayload payload = new JwtPayload(memberId, "CUSTOMER", TokenType.REFRESH);
 
         when(jwtProvider.parseRefreshPayload(refreshToken)).thenReturn(payload);
-        when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
-        when(refreshTokenRepository.findHashByMemberId(memberId)).thenReturn(Optional.of(refreshTokenHash));
+        when(memberRepository.findById(memberId)).thenReturn(Optional.of(createMember()));
+        when(jwtProvider.createAccessToken(any(JwtClaims.class))).thenReturn(newAccessToken);
+        when(jwtProvider.createRefreshToken(any(JwtClaims.class))).thenReturn(newRefreshToken);
         when(tokenHashUtil.sha256(refreshToken)).thenReturn(refreshTokenHash);
-
-        assertThatThrownBy(() -> reissueTokenService.reissue(refreshToken))
-                .isInstanceOf(MemberException.class)
-                .extracting("errorCode")
-                .isEqualTo(MemberErrorCode.WITHDRAWN_MEMBER);
-
-        verify(jwtProvider, never()).createAccessToken(any());
-        verify(jwtProvider, never()).createRefreshToken(any());
-    }
-
-    @Test
-    @DisplayName("재사용된 RT 요청이면 새 토큰을 발급하지 않는다")
-    void reissue_reusedRefreshToken_doesNotIssueNewTokens() {
-        Long memberId = 1L;
-        String refreshToken = "reused-refresh-token";
-        String savedHash = "saved-refresh-token-hash";
-        String requestHash = "request-refresh-token-hash";
-
-        Member member = Member.createCustomer("홍길동", "test@test.com", "01012345678", "{bcrypt}password");
-
-        JwtPayload payload = new JwtPayload(memberId, "CUSTOMER", TokenType.REFRESH);
-
-        when(jwtProvider.parseRefreshPayload(refreshToken)).thenReturn(payload);
-        when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
-        when(refreshTokenRepository.findHashByMemberId(memberId)).thenReturn(Optional.of(savedHash));
-        when(tokenHashUtil.sha256(refreshToken)).thenReturn(requestHash);
+        when(tokenHashUtil.sha256(newRefreshToken)).thenReturn(newRefreshTokenHash);
+        when(jwtProvider.getRefreshTokenExpirationMillis()).thenReturn(1_209_600_000L);
+        when(refreshTokenRepository.rotateIfMatches(
+                eq(memberId),
+                eq(refreshTokenHash),
+                eq(newRefreshTokenHash),
+                eq(Duration.ofMillis(1_209_600_000L))
+        )).thenReturn(false);
 
         assertThatThrownBy(() -> reissueTokenService.reissue(refreshToken))
                 .isInstanceOf(AuthException.class)
                 .extracting("errorCode")
                 .isEqualTo(AuthErrorCode.REUSED_REFRESH_TOKEN);
-
-        verify(jwtProvider, never()).createAccessToken(any());
-        verify(jwtProvider, never()).createRefreshToken(any());
     }
 
     @Test
-    @DisplayName("Redis에 RT hash가 없으면 새 토큰을 발급하지 않는다")
-    void reissue_missingRedisRefreshToken_doesNotIssueNewTokens() {
-        Long memberId = 1L;
-        String refreshToken = "refresh-token";
-
-        Member member = Member.createCustomer("홍길동", "test@test.com", "01012345678", "{bcrypt}password");
-        JwtPayload payload = new JwtPayload(memberId, "CUSTOMER", TokenType.REFRESH);
-
-        when(jwtProvider.parseRefreshPayload(refreshToken)).thenReturn(payload);
-        when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
-        when(refreshTokenRepository.findHashByMemberId(memberId)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> reissueTokenService.reissue(refreshToken))
-                .isInstanceOf(AuthException.class)
-                .extracting("errorCode")
-                .isEqualTo(AuthErrorCode.INVALID_REFRESH_TOKEN);
-
-        verify(jwtProvider, never()).createAccessToken(any());
-        verify(jwtProvider, never()).createRefreshToken(any());
-    }
-
-    @Test
-    @DisplayName("reissue 성공 시 기존 RT hash가 아니라 새 RT hash를 저장한다")
-    void reissue_success_savesNewRefreshTokenHash() {
+    @DisplayName("reissue 성공 시 기존 RT hash와 새 RT hash로 원자적 회전을 요청한다")
+    void reissue_success_rotatesRefreshTokenHash() {
         Long memberId = 1L;
         String oldRefreshToken = "old-refresh-token";
         String oldRefreshTokenHash = "old-refresh-token-hash";
         String newAccessToken = "new-access-token";
         String newRefreshToken = "new-refresh-token";
         String newRefreshTokenHash = "new-refresh-token-hash";
-
-        Member member = Member.createCustomer("홍길동", "test@test.com", "01012345678", "{bcrypt}password");
+        Duration ttl = Duration.ofMillis(1_209_600_000L);
 
         JwtPayload payload = new JwtPayload(memberId, "CUSTOMER", TokenType.REFRESH);
 
         when(jwtProvider.parseRefreshPayload(oldRefreshToken)).thenReturn(payload);
-        when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
-        when(refreshTokenRepository.findHashByMemberId(memberId)).thenReturn(Optional.of(oldRefreshTokenHash));
-        when(tokenHashUtil.sha256(oldRefreshToken)).thenReturn(oldRefreshTokenHash);
+        when(memberRepository.findById(memberId)).thenReturn(Optional.of(createMember()));
         when(jwtProvider.createAccessToken(any(JwtClaims.class))).thenReturn(newAccessToken);
         when(jwtProvider.createRefreshToken(any(JwtClaims.class))).thenReturn(newRefreshToken);
+        when(tokenHashUtil.sha256(oldRefreshToken)).thenReturn(oldRefreshTokenHash);
         when(tokenHashUtil.sha256(newRefreshToken)).thenReturn(newRefreshTokenHash);
-        when(jwtProvider.getRefreshTokenExpirationMillis()).thenReturn(1_209_600_000L);
+        when(jwtProvider.getRefreshTokenExpirationMillis()).thenReturn(ttl.toMillis());
+        when(refreshTokenRepository.rotateIfMatches(
+                eq(memberId),
+                eq(oldRefreshTokenHash),
+                eq(newRefreshTokenHash),
+                eq(ttl)
+        )).thenReturn(true);
 
         reissueTokenService.reissue(oldRefreshToken);
 
-        verify(refreshTokenRepository).saveHash(
+        verify(refreshTokenRepository).rotateIfMatches(
                 eq(memberId),
+                eq(oldRefreshTokenHash),
                 eq(newRefreshTokenHash),
-                eq(Duration.ofMillis(1_209_600_000L))
+                eq(ttl)
         );
     }
 
-
+    private Member createMember() {
+        return Member.createCustomer(
+                "홍길동",
+                "test@test.com",
+                "01012345678",
+                "{bcrypt}password"
+        );
+    }
 }
