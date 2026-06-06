@@ -46,4 +46,12 @@ class BearerTokenResolverTest {
                 .extracting("errorCode")
                 .isEqualTo(AuthErrorCode.INVALID_ACCESS_TOKEN);
     }
+
+    @Test
+    @DisplayName("Bearer 접두사만 있고 토큰이 비어 있으면 INVALID_ACCESS_TOKEN 예외가 발생한다")
+    void resolve_blankTokenAfterBearer() {
+        assertThatThrownBy(() -> resolver.resolve("Bearer "))
+                .isInstanceOf(AuthException.class)
+                .hasMessage(AuthErrorCode.INVALID_ACCESS_TOKEN.message());
+    }
 }
