@@ -26,7 +26,11 @@ public class RedisAccessTokenBlacklistRepository implements AccessTokenBlacklist
             Duration ttl
     ) {
         try {
-            if (ttl == null || ttl.isZero() || ttl.isNegative()) {
+            if (ttl == null) {
+                throw new IllegalArgumentException("Access Token TTL은 null이 될 수 없습니다.");
+            }
+
+            if (ttl.isZero() || ttl.isNegative()) {
                 return;
             }
 
