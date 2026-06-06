@@ -9,6 +9,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.util.Date;
 import java.util.UUID;
 import javax.crypto.SecretKey;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Component;
 public class JwtProvider {
 
     private final JwtProperties jwtProperties;
+    private final Clock clock;
 
     private SecretKey secretKey;
 
@@ -31,7 +33,7 @@ public class JwtProvider {
     }
 
     public String createAccessToken(JwtClaims claims) {
-        Date now = new Date();
+        Date now = now();
         Date expiration = new Date(now.getTime() + jwtProperties.accessTokenExpirationMillis());
 
         return Jwts.builder()
@@ -46,8 +48,8 @@ public class JwtProvider {
     }
 
     public String createRefreshToken(JwtClaims claims) {
-        Date now = new Date();
-        Date expiration = new Date(now.getTime() + jwtProperties.refreshTokenExpirationMillis());
+        Date now = now();
+        Date expiration = new Date(now.getTime() + jwtProperties.accessTokenExpirationMillis());
 
         return Jwts.builder()
                 .id(UUID.randomUUID().toString())
@@ -74,11 +76,13 @@ public class JwtProvider {
     }
 
     public Long getMemberIdFromAccessToken(String token) {
-        return Long.valueOf(parseAccessToken(token).getSubject());
+        Claims claims = parseAccessToken(token);
+        return parseMemberId(claims, AuthErrorCode.INVALID_ACCESS_TOKEN);
     }
 
     public Long getMemberIdFromRefreshToken(String token) {
-        return Long.valueOf(parseRefreshToken(token).getSubject());
+        Claims claims = parseRefreshToken(token);
+        return parseMemberId(claims, AuthErrorCode.INVALID_REFRESH_TOKEN);
     }
 
     public String getRoleFromAccessToken(String token) {
@@ -91,19 +95,27 @@ public class JwtProvider {
 
     public long getRemainingExpirationMillisFromAccessToken(String token) {
         Date expiration = parseAccessToken(token).getExpiration();
-        long remaining = expiration.getTime() - System.currentTimeMillis();
+        long remaining = expiration.getTime() - clock.millis();
 
         return Math.max(remaining, 0);
     }
 
     public JwtPayload parseAccessPayload(String token) {
         Claims claims = parseAccessToken(token);
-        return JwtPayload.from(claims);
+        return JwtPayload.from(claims, TokenType.ACCESS, AuthErrorCode.INVALID_ACCESS_TOKEN);
     }
 
     public JwtPayload parseRefreshPayload(String token) {
         Claims claims = parseRefreshToken(token);
-        return JwtPayload.from(claims);
+        return JwtPayload.from(claims, TokenType.REFRESH, AuthErrorCode.INVALID_REFRESH_TOKEN);
+    }
+
+    private Long parseMemberId(Claims claims, AuthErrorCode invalidErrorCode) {
+        try {
+            return Long.valueOf(claims.getSubject());
+        } catch (RuntimeException e) {
+            throw new AuthException(invalidErrorCode);
+        }
     }
 
     private Claims parseClaims(
@@ -114,6 +126,7 @@ public class JwtProvider {
         try {
             return Jwts.parser()
                     .verifyWith(secretKey)
+                    .clock(() -> Date.from(clock.instant()))
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
@@ -134,5 +147,9 @@ public class JwtProvider {
         if (!expectedType.isSame(actualType)) {
             throw new AuthException(errorCode);
         }
+    }
+
+    private Date now() {
+        return Date.from(clock.instant());
     }
 }

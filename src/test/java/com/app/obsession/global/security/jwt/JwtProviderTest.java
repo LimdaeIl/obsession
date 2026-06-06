@@ -5,6 +5,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.app.obsession.global.security.exception.AuthErrorCode;
 import com.app.obsession.global.security.exception.AuthException;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,16 +15,23 @@ import org.junit.jupiter.api.Test;
 class JwtProviderTest {
 
     private JwtProvider jwtProvider;
+    private Clock clock;
+
 
     @BeforeEach
     void setUp() {
+        clock = Clock.fixed(
+                Instant.parse("2026-01-01T00:00:00Z"),
+                ZoneOffset.UTC
+        );
+
         JwtProperties jwtProperties = new JwtProperties(
                 "obsession-obsession-obsession-obsession-obsession-secret-key-123456789",
                 1_800_000L,
                 1_209_600_000L
         );
 
-        jwtProvider = new JwtProvider(jwtProperties);
+        jwtProvider = new JwtProvider(jwtProperties, clock);
         jwtProvider.init();
     }
 
@@ -94,23 +104,32 @@ class JwtProviderTest {
 
     @Test
     @DisplayName("만료된 Access Token은 EXPIRED_ACCESS_TOKEN 예외")
-    void parseExpiredAccessToken() throws InterruptedException {
+    void parseExpiredAccessToken() {
         JwtProperties jwtProperties = new JwtProperties(
                 "obsession-obsession-obsession-obsession-obsession-secret-key-123456789",
                 1L,
                 1_209_600_000L
         );
 
-        JwtProvider shortLivedJwtProvider = new JwtProvider(jwtProperties);
-        shortLivedJwtProvider.init();
-
-        String accessToken = shortLivedJwtProvider.createAccessToken(
-                new JwtClaims(1L, "CUSTOMER")
+        Clock issuedClock = Clock.fixed(
+                Instant.parse("2026-01-01T00:00:00Z"),
+                ZoneOffset.UTC
         );
 
-        Thread.sleep(10L);
+        Clock expiredClock = Clock.fixed(
+                Instant.parse("2026-01-01T00:00:01Z"),
+                ZoneOffset.UTC
+        );
 
-        assertThatThrownBy(() -> shortLivedJwtProvider.parseAccessPayload(accessToken))
+        JwtProvider issuedProvider = new JwtProvider(jwtProperties, issuedClock);
+        issuedProvider.init();
+
+        String accessToken = issuedProvider.createAccessToken(new JwtClaims(1L, "CUSTOMER"));
+
+        JwtProvider expiredProvider = new JwtProvider(jwtProperties, expiredClock);
+        expiredProvider.init();
+
+        assertThatThrownBy(() -> expiredProvider.parseAccessPayload(accessToken))
                 .isInstanceOf(AuthException.class)
                 .extracting("errorCode")
                 .isEqualTo(AuthErrorCode.EXPIRED_ACCESS_TOKEN);
@@ -118,23 +137,32 @@ class JwtProviderTest {
 
     @Test
     @DisplayName("만료된 Refresh Token은 EXPIRED_REFRESH_TOKEN 예외")
-    void parseExpiredRefreshToken() throws InterruptedException {
+    void parseExpiredRefreshToken() {
         JwtProperties jwtProperties = new JwtProperties(
                 "obsession-obsession-obsession-obsession-obsession-secret-key-123456789",
                 1_800_000L,
                 1L
         );
 
-        JwtProvider shortLivedJwtProvider = new JwtProvider(jwtProperties);
-        shortLivedJwtProvider.init();
-
-        String refreshToken = shortLivedJwtProvider.createRefreshToken(
-                new JwtClaims(1L, "CUSTOMER")
+        Clock issuedClock = Clock.fixed(
+                Instant.parse("2026-01-01T00:00:00Z"),
+                ZoneOffset.UTC
         );
 
-        Thread.sleep(10L);
+        Clock expiredClock = Clock.fixed(
+                Instant.parse("2026-01-01T00:00:01Z"),
+                ZoneOffset.UTC
+        );
 
-        assertThatThrownBy(() -> shortLivedJwtProvider.parseRefreshPayload(refreshToken))
+        JwtProvider issuedProvider = new JwtProvider(jwtProperties, issuedClock);
+        issuedProvider.init();
+
+        String refreshToken = issuedProvider.createRefreshToken(new JwtClaims(1L, "CUSTOMER"));
+
+        JwtProvider expiredProvider = new JwtProvider(jwtProperties, expiredClock);
+        expiredProvider.init();
+
+        assertThatThrownBy(() -> expiredProvider.parseRefreshPayload(refreshToken))
                 .isInstanceOf(AuthException.class)
                 .extracting("errorCode")
                 .isEqualTo(AuthErrorCode.EXPIRED_REFRESH_TOKEN);
