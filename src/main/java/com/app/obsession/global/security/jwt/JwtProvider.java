@@ -49,7 +49,7 @@ public class JwtProvider {
 
     public String createRefreshToken(JwtClaims claims) {
         Date now = now();
-        Date expiration = new Date(now.getTime() + jwtProperties.accessTokenExpirationMillis());
+        Date expiration = new Date(now.getTime() + jwtProperties.refreshTokenExpirationMillis());
 
         return Jwts.builder()
                 .id(UUID.randomUUID().toString())
@@ -62,15 +62,21 @@ public class JwtProvider {
     }
 
     public Claims parseAccessToken(String token) {
-        Claims claims = parseClaims(token, AuthErrorCode.EXPIRED_ACCESS_TOKEN,
-                AuthErrorCode.INVALID_ACCESS_TOKEN);
+        Claims claims = parseClaims(
+                token,
+                AuthErrorCode.EXPIRED_ACCESS_TOKEN,
+                AuthErrorCode.INVALID_ACCESS_TOKEN
+        );
         validateTokenType(claims, TokenType.ACCESS, AuthErrorCode.INVALID_ACCESS_TOKEN);
         return claims;
     }
 
     public Claims parseRefreshToken(String token) {
-        Claims claims = parseClaims(token, AuthErrorCode.EXPIRED_REFRESH_TOKEN,
-                AuthErrorCode.INVALID_REFRESH_TOKEN);
+        Claims claims = parseClaims(
+                token,
+                AuthErrorCode.EXPIRED_REFRESH_TOKEN,
+                AuthErrorCode.INVALID_REFRESH_TOKEN
+        );
         validateTokenType(claims, TokenType.REFRESH, AuthErrorCode.INVALID_REFRESH_TOKEN);
         return claims;
     }
@@ -110,6 +116,10 @@ public class JwtProvider {
         return JwtPayload.from(claims, TokenType.REFRESH, AuthErrorCode.INVALID_REFRESH_TOKEN);
     }
 
+    private Date now() {
+        return Date.from(clock.instant());
+    }
+
     private Long parseMemberId(Claims claims, AuthErrorCode invalidErrorCode) {
         try {
             return Long.valueOf(claims.getSubject());
@@ -147,9 +157,5 @@ public class JwtProvider {
         if (!expectedType.isSame(actualType)) {
             throw new AuthException(errorCode);
         }
-    }
-
-    private Date now() {
-        return Date.from(clock.instant());
     }
 }
