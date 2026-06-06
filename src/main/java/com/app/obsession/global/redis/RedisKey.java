@@ -24,7 +24,7 @@ public class RedisKey {
         String keyPrefix = redisKeyProperties.keyPrefix();
 
         if (keyPrefix == null || keyPrefix.isBlank()) {
-            return "obsession:local";
+            throw new IllegalStateException("redis keyPrefix 공백 또는 null일 수 없습니다.");
         }
 
         return keyPrefix;
