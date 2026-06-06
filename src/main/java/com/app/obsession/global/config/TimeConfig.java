@@ -1,14 +1,14 @@
 package com.app.obsession.global.config;
 
+import java.time.Clock;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import tools.jackson.databind.json.JsonMapper;
 
 @Configuration
-public class JsonConfig {
+public class TimeConfig {
 
     @Bean
-    JsonMapper jsonMapper() {
-        return new JsonMapper();
+    public Clock clock() {
+        return Clock.systemUTC();
     }
 }
