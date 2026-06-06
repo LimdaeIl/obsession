@@ -1,8 +1,9 @@
 package com.app.obsession.global.security.jwt;
 
 import com.app.obsession.global.security.auth.CustomUserDetails;
-import com.app.obsession.member.application.port.MemberRepository;
-import com.app.obsession.member.domain.Member;
+import com.app.obsession.global.security.exception.AuthErrorCode;
+import com.app.obsession.global.security.exception.AuthException;
+import com.app.obsession.member.application.port.AccessTokenBlacklistRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,10 +20,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String AUTHORIZATION = "Authorization";
-    private static final String BEARER_PREFIX = "Bearer ";
 
+    private final BearerTokenResolver bearerTokenResolver;
     private final JwtProvider jwtProvider;
-    private final MemberRepository memberRepository;
+    private final AccessTokenBlacklistRepository accessTokenBlacklistRepository;
+    private final TokenHashUtil tokenHashUtil;
 
     @Override
     protected void doFilterInternal(
@@ -31,30 +33,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        String token = resolveToken(request);
+        String authorizationHeader = request.getHeader(AUTHORIZATION);
 
-        if (token != null && jwtProvider.validateToken(token)) {
-            Long memberId = jwtProvider.getMemberId(token);
-
-            memberRepository.findById(memberId)
-                    .ifPresent(this::setAuthentication);
+        if (authorizationHeader == null || authorizationHeader.isBlank()) {
+            filterChain.doFilter(request, response);
+            return;
         }
 
-        filterChain.doFilter(request, response);
-    }
+        SecurityContextHolder.clearContext();
 
-    private String resolveToken(HttpServletRequest request) {
-        String authorization = request.getHeader(AUTHORIZATION);
+        String accessToken = bearerTokenResolver.resolve(authorizationHeader);
+        String accessTokenHash = tokenHashUtil.sha256(accessToken);
 
-        if (authorization == null || !authorization.startsWith(BEARER_PREFIX)) {
-            return null;
+        if (accessTokenBlacklistRepository.existsByHash(accessTokenHash)) {
+            throw new AuthException(AuthErrorCode.BLACKLISTED_ACCESS_TOKEN);
         }
 
-        return authorization.substring(BEARER_PREFIX.length());
-    }
+        JwtPayload payload = jwtProvider.parseAccessPayload(accessToken);
 
-    private void setAuthentication(Member member) {
-        CustomUserDetails userDetails = new CustomUserDetails(member);
+        CustomUserDetails userDetails = new CustomUserDetails(
+                payload.memberId(),
+                payload.role()
+        );
 
         UsernamePasswordAuthenticationToken authentication =
                 new UsernamePasswordAuthenticationToken(
@@ -64,5 +64,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        filterChain.doFilter(request, response);
     }
 }
