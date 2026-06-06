@@ -9,7 +9,7 @@ import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 @RequiredArgsConstructor
@@ -17,7 +17,7 @@ public class SecurityErrorResponder {
 
     private static final String PROBLEM_BASE_URI = "about:blank/";
 
-    private final JsonMapper jsonMapper;
+    private final ObjectMapper objectMapper;
 
     public void unauthorized(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
@@ -48,7 +48,7 @@ public class SecurityErrorResponder {
         response.setStatus(code.status().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
-        jsonMapper.writeValue(response.getWriter(), body);
+        objectMapper.writeValue(response.getWriter(), body);
     }
 
     private String problemType(String title) {

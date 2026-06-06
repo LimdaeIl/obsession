@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
 class SecurityErrorResponderTest {
@@ -17,7 +18,8 @@ class SecurityErrorResponderTest {
 
     @BeforeEach
     void setUp() {
-        securityErrorResponder = new SecurityErrorResponder(new JsonMapper());
+        ObjectMapper objectMapper = JsonMapper.builder().build();
+        securityErrorResponder = new SecurityErrorResponder(objectMapper);
     }
 
     @Test
