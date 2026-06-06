@@ -1,8 +1,15 @@
 package com.app.obsession;
 
+import com.app.obsession.global.redis.RedisKeyProperties;
+import com.app.obsession.global.security.jwt.JwtProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
+@EnableConfigurationProperties({
+		JwtProperties.class,
+		RedisKeyProperties.class
+})
 @SpringBootApplication
 public class ObsessionApplication {
 

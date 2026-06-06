@@ -20,6 +20,12 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
 
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
 logging:
   level:
     org.hibernate.SQL: debug
@@ -28,4 +34,9 @@ logging:
 
 jwt:
   secret: "obsession-obsession-obsession-obsession-obsession-secret-key-123456789"
-  access-token-expiration-millis: 3600000
+  access-token-expiration-millis: 1800000   # 30분
+  refresh-token-expiration-millis: 1209600000 # 14일
+
+app:
+  redis:
+    key-prefix: ${APP_REDIS_KEY_PREFIX:obsession:local}
