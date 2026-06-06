@@ -25,6 +25,14 @@ public class CustomUserDetails implements UserDetails {
         this.enabled = !member.isWithdrawn();
     }
 
+    public CustomUserDetails(Long memberId, String role) {
+        this.memberId = memberId;
+        this.email = null;
+        this.password = null;
+        this.role = role;
+        this.enabled = true;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role));
@@ -32,7 +40,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public String getUsername() {
-        return email;
+        return memberId.toString();
     }
 
     @Override
