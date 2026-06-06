@@ -28,7 +28,7 @@ public class ReissueTokenService {
     private final MemberRepository memberRepository;
     private final RefreshTokenRepository refreshTokenRepository;
 
-    @Transactional(readOnly = true)
+    @Transactional
     public TokenResponse reissue(String refreshToken) {
         validateRefreshToken(refreshToken);
 
@@ -36,8 +36,6 @@ public class ReissueTokenService {
         Long memberId = payload.memberId();
 
         Member member = getMember(memberId);
-
-        validateStoredRefreshToken(memberId, refreshToken);
         validateMemberStatus(memberId, member);
 
         JwtClaims jwtClaims = JwtClaims.of(member);
@@ -45,13 +43,21 @@ public class ReissueTokenService {
         String newAccessToken = jwtProvider.createAccessToken(jwtClaims);
         String newRefreshToken = jwtProvider.createRefreshToken(jwtClaims);
 
+        String currentRefreshTokenHash = tokenHashUtil.sha256(refreshToken);
         String newRefreshTokenHash = tokenHashUtil.sha256(newRefreshToken);
 
-        refreshTokenRepository.saveHash(
+        boolean rotated = refreshTokenRepository.rotateIfMatches(
                 memberId,
+                currentRefreshTokenHash,
                 newRefreshTokenHash,
                 Duration.ofMillis(jwtProvider.getRefreshTokenExpirationMillis())
         );
+
+        if (!rotated) {
+            log.warn("Refresh token reuse detected. memberId={}", memberId);
+            refreshTokenRepository.deleteByMemberId(memberId);
+            throw new AuthException(AuthErrorCode.REUSED_REFRESH_TOKEN);
+        }
 
         return TokenResponse.of(newAccessToken, newRefreshToken);
     }
@@ -65,21 +71,6 @@ public class ReissueTokenService {
     private Member getMember(Long memberId) {
         return memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND));
-    }
-
-    private void validateStoredRefreshToken(Long memberId, String refreshToken) {
-        String savedRefreshTokenHash = refreshTokenRepository.findHashByMemberId(memberId)
-                .orElseThrow(() -> new AuthException(AuthErrorCode.INVALID_REFRESH_TOKEN));
-
-        String refreshTokenHash = tokenHashUtil.sha256(refreshToken);
-
-        if (!savedRefreshTokenHash.equals(refreshTokenHash)) {
-            log.warn("Refresh token reuse detected. memberId={}", memberId);
-
-            refreshTokenRepository.deleteByMemberId(memberId);
-
-            throw new AuthException(AuthErrorCode.REUSED_REFRESH_TOKEN);
-        }
     }
 
     private void validateMemberStatus(Long memberId, Member member) {
