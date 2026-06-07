@@ -25,6 +25,7 @@ public record SignupRequest(
         @Pattern(regexp = "^\\d{10,11}$", message = "회원가입: 전화번호는 숫자 10~11자리여야 합니다.")
         String phone
 ) {
+
     public SignupCommand toCommand() {
         return new SignupCommand(email, password, name, phone);
     }

@@ -34,12 +34,12 @@ public class RedisTokenInvalidationRepository implements TokenInvalidationReposi
 
             String script = """
                     redis.call('DEL', KEYS[1])
-
+                    
                     local ttl = tonumber(ARGV[2])
                     if ttl > 0 then
                         redis.call('SET', KEYS[2], ARGV[1], 'PX', ttl)
                     end
-
+                    
                     return 1
                     """;
 

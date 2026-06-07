@@ -77,16 +77,16 @@ public class RedisRefreshTokenRepository implements RefreshTokenRepository {
             String key = redisKey.refreshToken(memberId);
 
             String script = """
-                local current = redis.call('GET', KEYS[1])
-                if not current then
-                    return 0
-                end
-                if current ~= ARGV[1] then
-                    return 0
-                end
-                redis.call('SET', KEYS[1], ARGV[2], 'PX', ARGV[3])
-                return 1
-                """;
+                    local current = redis.call('GET', KEYS[1])
+                    if not current then
+                        return 0
+                    end
+                    if current ~= ARGV[1] then
+                        return 0
+                    end
+                    redis.call('SET', KEYS[1], ARGV[2], 'PX', ARGV[3])
+                    return 1
+                    """;
 
             Long result = redisTemplate.execute(
                     new DefaultRedisScript<>(script, Long.class),

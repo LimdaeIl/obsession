@@ -24,6 +24,7 @@ public class RedisKey {
         String keyPrefix = redisKeyProperties.keyPrefix();
 
         if (keyPrefix == null || keyPrefix.isBlank()) {
+            // 사용자 요청 처리 중 발생하는 비즈니스 예외나 인증 예외가 아니기 때문에 RuntimeException을 던집니다.
             throw new IllegalStateException("redis keyPrefix 공백 또는 null일 수 없습니다.");
         }
 
