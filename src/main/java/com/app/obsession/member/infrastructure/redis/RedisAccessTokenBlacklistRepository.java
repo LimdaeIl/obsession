@@ -27,7 +27,7 @@ public class RedisAccessTokenBlacklistRepository implements AccessTokenBlacklist
     ) {
         try {
             if (ttl == null) {
-                throw new IllegalArgumentException("Access Token TTL은 null이 될 수 없습니다.");
+                throw new AuthException(AuthErrorCode.TOKEN_STORE_UNAVAILABLE);
             }
 
             if (ttl.isZero() || ttl.isNegative()) {

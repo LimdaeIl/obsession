@@ -13,4 +13,5 @@ public record JwtProperties(
         @Positive long accessTokenExpirationMillis,
         @Positive long refreshTokenExpirationMillis
 ) {
+
 }

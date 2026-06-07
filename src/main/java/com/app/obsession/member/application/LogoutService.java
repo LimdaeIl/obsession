@@ -2,11 +2,6 @@ package com.app.obsession.member.application;
 
 import com.app.obsession.global.security.jwt.AccessTokenBlacklistReason;
 import com.app.obsession.global.security.jwt.BearerTokenResolver;
-import com.app.obsession.global.security.jwt.JwtProvider;
-import com.app.obsession.global.security.jwt.TokenHashUtil;
-import com.app.obsession.member.application.port.AccessTokenBlacklistRepository;
-import com.app.obsession.member.application.port.RefreshTokenRepository;
-import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

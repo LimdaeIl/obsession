@@ -20,8 +20,4 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .map(CustomUserDetails::new)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND));
     }
-
-    public UserDetails loadUserByMemberId(Long memberId) {
-        throw new UnsupportedOperationException("현재 JWT 인증은 JwtAuthenticationFilter에서 직접 UserDetails를 생성합니다.");
-    }
 }
