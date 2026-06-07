@@ -21,12 +21,18 @@
 
 ## 기술적 목표
 
-* DDD(Domain Driven Design) 기반 도메인 설계
-* Redis Distributed Lock을 활용한 동시성 제어
-* 외부 결제 실패에 대응하는 보상 트랜잭션 구현
-* 이벤트 기반 비동기 처리 구조 설계
-* 대량 요청 처리 및 장애 대응 전략 적용
-* 모놀리식 구조에서 도메인 중심 아키텍처 구현
+- DDD 기반 도메인 설계 
+- 회원 / 상품 / 재고 / 주문 / 결제 도메인 
+- Redis Distributed Lock 기반 선착순 재고 차감 
+- 주문/결제 상태 머신 
+- PG Mock 연동 
+- PG 실패 시 재고 복구 + 주문 실패 처리 
+- Idempotency Key로 중복 주문/결제 방지 
+- Transactional Outbox Pattern 
+- RabbitMQ 또는 Redis Stream 기반 SMS 비동기 발송 
+- 재시도 / DLQ / 발송 상태 추적 
+- 동시성 테스트 
+- k6 또는 JMeter 부하 테스트
 
 ---
 
