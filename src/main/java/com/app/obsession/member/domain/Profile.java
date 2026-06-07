@@ -1,6 +1,5 @@
 package com.app.obsession.member.domain;
 
-import com.app.obsession.global.exception.AppException;
 import com.app.obsession.member.exception.MemberErrorCode;
 import com.app.obsession.member.exception.MemberException;
 import jakarta.persistence.Column;
