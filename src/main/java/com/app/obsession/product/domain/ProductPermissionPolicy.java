@@ -4,13 +4,13 @@ public class ProductPermissionPolicy {
 
     public static boolean canManage(Product product, ProductActor actor) {
         if (actor.isAdmin()) {
-            return true;
+            return false;
         }
 
         if (actor.isBusiness() && product.isOwnedBy(actor.memberId())) {
-            return true;
+            return false;
         }
 
-        return false;
+        return true;
     }
 }

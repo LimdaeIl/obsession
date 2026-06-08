@@ -1,7 +1,15 @@
 package com.app.obsession.product.domain;
 
 import com.app.obsession.global.entity.BaseAuditEntity;
-import jakarta.persistence.*;
+import com.app.obsession.product.exception.ProductErrorCode;
+import com.app.obsession.product.exception.ProductException;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -62,7 +70,7 @@ public class ProductStock extends BaseAuditEntity {
         validatePositiveQuantity(quantity);
 
         if (availableQuantity() < quantity) {
-            throw new IllegalStateException("판매 가능 재고보다 많이 차감할 수 없습니다.");
+            throw new ProductException(ProductErrorCode.CANNOT_DECREASE_MORE_THAN_AVAILABLE_STOCK);
         }
 
         this.totalQuantity -= quantity;
@@ -72,7 +80,7 @@ public class ProductStock extends BaseAuditEntity {
         validatePositiveQuantity(quantity);
 
         if (!hasAvailableQuantity(quantity)) {
-            throw new IllegalStateException("재고가 부족합니다.");
+            throw new ProductException(ProductErrorCode.INSUFFICIENT_STOCK);
         }
 
         this.reservedQuantity += quantity;
@@ -82,7 +90,7 @@ public class ProductStock extends BaseAuditEntity {
         validatePositiveQuantity(quantity);
 
         if (this.reservedQuantity < quantity) {
-            throw new IllegalStateException("예약 재고보다 많이 해제할 수 없습니다.");
+            throw new ProductException(ProductErrorCode.CANNOT_RELEASE_MORE_THAN_RESERVED_STOCK);
         }
 
         this.reservedQuantity -= quantity;
@@ -92,7 +100,7 @@ public class ProductStock extends BaseAuditEntity {
         validatePositiveQuantity(quantity);
 
         if (this.reservedQuantity < quantity) {
-            throw new IllegalStateException("예약 재고보다 많이 판매 확정할 수 없습니다.");
+            throw new ProductException(ProductErrorCode.CANNOT_CONFIRM_MORE_THAN_RESERVED_STOCK);
         }
 
         this.reservedQuantity -= quantity;
@@ -101,19 +109,19 @@ public class ProductStock extends BaseAuditEntity {
 
     private static void validateProductId(Long productId) {
         if (productId == null || productId <= 0) {
-            throw new IllegalArgumentException("상품 ID가 올바르지 않습니다.");
+            throw new ProductException(ProductErrorCode.INVALID_PRODUCT_ID);
         }
     }
 
     private static void validateQuantity(int quantity) {
         if (quantity < 0) {
-            throw new IllegalArgumentException("재고 수량은 0 이상이어야 합니다.");
+            throw new ProductException(ProductErrorCode.INVALID_STOCK_QUANTITY);
         }
     }
 
     private static void validatePositiveQuantity(int quantity) {
         if (quantity <= 0) {
-            throw new IllegalArgumentException("수량은 1 이상이어야 합니다.");
+            throw new ProductException(ProductErrorCode.INVALID_ORDER_QUANTITY);
         }
     }
 }

@@ -1,6 +1,8 @@
 package com.app.obsession.product.domain;
 
 import com.app.obsession.global.entity.BaseAuditEntity;
+import com.app.obsession.product.exception.ProductErrorCode;
+import com.app.obsession.product.exception.ProductException;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -47,7 +49,6 @@ public class Product extends BaseAuditEntity {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductImage> images = new ArrayList<>();
 
-
     private Product(
             Long sellerId,
             String name,
@@ -93,24 +94,39 @@ public class Product extends BaseAuditEntity {
         this.price = price;
     }
 
+    public void changeStatus(ProductStatus status) {
+        if (this.status == ProductStatus.DELETED) {
+            throw new ProductException(ProductErrorCode.DELETED_PRODUCT_CANNOT_BE_UPDATED);
+        }
+
+        if (status == null) {
+            throw new ProductException(ProductErrorCode.INVALID_PRODUCT_STATUS);
+        }
+
+        this.status = status;
+    }
+
     public void startSale() {
         if (this.status == ProductStatus.DELETED) {
-            throw new IllegalStateException("삭제된 상품은 판매할 수 없습니다.");
+            throw new ProductException(ProductErrorCode.DELETED_PRODUCT_CANNOT_BE_SOLD);
         }
+
         this.status = ProductStatus.ON_SALE;
     }
 
     public void stopSale() {
         if (this.status == ProductStatus.DELETED) {
-            throw new IllegalStateException("삭제된 상품은 판매 중지할 수 없습니다.");
+            throw new ProductException(ProductErrorCode.DELETED_PRODUCT_CANNOT_STOP_SALE);
         }
+
         this.status = ProductStatus.HIDDEN;
     }
 
     public void markSoldOut() {
         if (this.status != ProductStatus.ON_SALE) {
-            throw new IllegalStateException("판매 중인 상품만 품절 처리할 수 있습니다.");
+            throw new ProductException(ProductErrorCode.ONLY_ON_SALE_PRODUCT_CAN_BE_SOLD_OUT);
         }
+
         this.status = ProductStatus.SOLD_OUT;
     }
 
@@ -124,67 +140,55 @@ public class Product extends BaseAuditEntity {
 
     public void removeImage(Long imageId) {
         if (imageId == null) {
-            throw new IllegalArgumentException("이미지 ID는 필수입니다.");
+            throw new ProductException(ProductErrorCode.INVALID_IMAGE_ID);
         }
 
         this.images.removeIf(image -> imageId.equals(image.getId()));
     }
 
-    public void changeStatus(ProductStatus status) {
-
-        if (status == null) {
-            throw new IllegalArgumentException("상품 상태는 필수입니다.");
-        }
-
-        if (this.status == ProductStatus.DELETED) {
-            throw new IllegalStateException("삭제된 상품은 수정할 수 없습니다.");
-        }
-
-        this.status = status;
-    }
-
     public boolean isOwnedBy(Long memberId) {
-        return this.sellerId.equals(memberId);
+        return memberId != null && this.sellerId.equals(memberId);
     }
 
     private static void validateSellerId(Long sellerId) {
         if (sellerId == null || sellerId <= 0) {
-            throw new IllegalArgumentException("판매자 ID가 올바르지 않습니다.");
+            throw new ProductException(ProductErrorCode.INVALID_SELLER_ID);
         }
     }
 
     private static void validateName(String name) {
         if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("상품명은 필수입니다.");
+            throw new ProductException(ProductErrorCode.INVALID_PRODUCT_NAME);
         }
+
         if (name.length() > 100) {
-            throw new IllegalArgumentException("상품명은 100자를 초과할 수 없습니다.");
+            throw new ProductException(ProductErrorCode.PRODUCT_NAME_TOO_LONG);
         }
     }
 
     private static void validateDescription(String description) {
         if (description == null || description.isBlank()) {
-            throw new IllegalArgumentException("상품 설명은 필수입니다.");
+            throw new ProductException(ProductErrorCode.INVALID_PRODUCT_DESCRIPTION);
         }
+
         if (description.length() > 1000) {
-            throw new IllegalArgumentException("상품 설명은 1000자를 초과할 수 없습니다.");
+            throw new ProductException(ProductErrorCode.PRODUCT_DESCRIPTION_TOO_LONG);
         }
     }
 
     private static void validatePrice(BigDecimal price) {
         if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("상품 가격은 0보다 커야 합니다.");
+            throw new ProductException(ProductErrorCode.INVALID_PRODUCT_PRICE);
         }
     }
 
     private static void validateInitialStatus(ProductStatus status) {
         if (status == null) {
-            throw new IllegalArgumentException("상품 상태는 필수입니다.");
+            throw new ProductException(ProductErrorCode.INVALID_PRODUCT_STATUS);
         }
 
         if (!status.canUseAsInitialStatus()) {
-            throw new IllegalArgumentException("상품 등록 시 사용할 수 없는 상태입니다.");
+            throw new ProductException(ProductErrorCode.INVALID_INITIAL_PRODUCT_STATUS);
         }
     }
 }
-

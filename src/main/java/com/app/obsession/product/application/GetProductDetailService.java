@@ -3,6 +3,8 @@ package com.app.obsession.product.application;
 import com.app.obsession.product.application.port.ProductRepository;
 import com.app.obsession.product.domain.Product;
 import com.app.obsession.product.domain.ProductStatus;
+import com.app.obsession.product.exception.ProductErrorCode;
+import com.app.obsession.product.exception.ProductException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,13 +18,12 @@ public class GetProductDetailService {
     @Transactional(readOnly = true)
     public Product getProduct(Long productId) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다."));
+                .orElseThrow(() -> new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND));
 
         if (product.getStatus() == ProductStatus.DELETED) {
-            throw new IllegalArgumentException("상품을 찾을 수 없습니다.");
+            throw new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND);
         }
 
         return product;
     }
-
 }
