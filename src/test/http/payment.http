@@ -1,0 +1,122 @@
+### 1. 회원가입 - 고객
+POST http://localhost:8080/api/v1/auth/signup
+Content-Type: application/json
+
+{
+  "email": "customer@test.com",
+  "password": "1234abcd!",
+  "name": "고객",
+  "phone": "01012345678",
+  "role": "CUSTOMER"
+}
+
+### 2. 회원가입 - 사업자
+POST http://localhost:8080/api/v1/auth/signup
+Content-Type: application/json
+
+{
+  "email": "business@test.com",
+  "password": "1234abcd!",
+  "name": "사업자",
+  "phone": "01022223333",
+  "role": "BUSINESS",
+  "companyName": "테스트상사",
+  "businessRegistrationNumber": "1234567890"
+}
+
+### 3. 사업자 로그인
+POST http://localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "business@test.com",
+  "password": "1234abcd!"
+}
+
+> {%
+  client.global.set("businessAccessToken", response.body.data.accessToken);
+%}
+
+### 4. 고객 로그인
+POST http://localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "customer@test.com",
+  "password": "1234abcd!"
+}
+
+> {%
+  client.global.set("customerAccessToken", response.body.data.accessToken);
+%}
+
+### 5. 상품 등록 - 사업자
+POST http://localhost:8080/api/v1/products/register
+Authorization: Bearer {{businessAccessToken}}
+Content-Type: application/json
+
+{
+  "name": "테스트 향수1",
+  "description": "결제 테스트용 상품1입니다.",
+  "price": 35000,
+  "status": "ON_SALE",
+  "initialStock": 100,
+  "imageUrls": [
+    "https://example.com/product-1.jpg"
+  ]
+}
+
+> {%
+  client.global.set("productId", response.body.data.productId);
+%}
+
+### 6. 상품 목록 조회
+GET http://localhost:8080/api/v1/products?page=0&size=20
+Authorization: Bearer {{customerAccessToken}}
+
+### 7. 상품 상세 조회
+GET http://localhost:8080/api/v1/products/{{productId}}
+Authorization: Bearer {{customerAccessToken}}
+
+### 8. 주문 생성 - 고객
+POST http://localhost:8080/api/v1/orders
+Authorization: Bearer {{customerAccessToken}}
+Content-Type: application/json
+
+{
+  "orderLines": [
+    {
+      "productId": {{productId}},
+      "quantity": 1
+    }
+  ]
+}
+
+> {%
+  client.global.set("orderId", response.body.data.orderId);
+  client.global.set("tossOrderId", "ORDER-" + response.body.data.orderId);
+%}
+
+### 9. 내 주문 목록 조회
+GET http://localhost:8080/api/v1/orders?page=0&size=20
+Authorization: Bearer {{customerAccessToken}}
+
+### 10. 내 주문 상세 조회
+GET http://localhost:8080/api/v1/orders/{{orderId}}
+Authorization: Bearer {{customerAccessToken}}
+
+### 11. 토스 결제 승인
+### 주의: paymentKey는 토스 결제창 성공 후 successUrl로 받은 실제 값으로 교체해야 함
+POST http://localhost:8080/api/v1/payments/toss/confirm
+Authorization: Bearer {{customerAccessToken}}
+Content-Type: application/json
+
+{
+  "paymentKey": "REPLACE_WITH_REAL_TOSS_PAYMENT_KEY",
+  "orderId": "{{tossOrderId}}",
+  "amount": 35000
+}
+
+### 12. 결제 후 주문 상세 조회
+GET http://localhost:8080/api/v1/orders/{{orderId}}
+Authorization: Bearer {{customerAccessToken}}
