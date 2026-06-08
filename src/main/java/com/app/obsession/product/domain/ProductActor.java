@@ -6,14 +6,25 @@ public record ProductActor(
 ) {
 
     public boolean isAdmin() {
-        return "ADMIN".equals(role);
+        return "ADMIN".equals(normalizedRole());
     }
 
     public boolean isBusiness() {
-        return "BUSINESS".equals(role);
+        return "BUSINESS".equals(normalizedRole());
     }
 
     public boolean canCreateProduct() {
         return isBusiness() || isAdmin();
+    }
+
+    private String normalizedRole() {
+        if (role == null || role.isBlank()) {
+            return "";
+        }
+
+        return role
+                .trim()
+                .toUpperCase()
+                .replaceFirst("^ROLE_", "");
     }
 }
