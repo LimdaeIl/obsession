@@ -2,9 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { confirmTossPayment } from "../api/paymentApi";
 
+const parseInternalOrderId = (tossOrderId) => {
+  if (!tossOrderId) return null;
+
+  const parts = tossOrderId.split("-");
+  if (parts.length < 2) return null;
+
+  return parts[1];
+};
+
 export default function TossSuccessPage() {
   const [searchParams] = useSearchParams();
-
   const calledRef = useRef(false);
 
   const [message, setMessage] = useState("결제 승인 처리 중...");
@@ -34,10 +42,13 @@ export default function TossSuccessPage() {
         amount: Number(amount),
       });
 
-      setOrderId(tossOrderId.replace("ORDER-", ""));
+      setOrderId(parseInternalOrderId(tossOrderId));
       setMessage("결제 승인에 성공했습니다.");
     } catch (error) {
       setMessage(error.response?.data?.detail || "결제 승인 실패");
+
+      const tossOrderId = searchParams.get("orderId");
+      setOrderId(parseInternalOrderId(tossOrderId));
     }
   };
 
@@ -51,4 +62,3 @@ export default function TossSuccessPage() {
       </div>
   );
 }
-

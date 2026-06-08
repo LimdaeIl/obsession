@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { login } from "../api/authApi";
+import { Navigate, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { login, isLoggedIn, loading } = useAuth();
 
   const [form, setForm] = useState({
     email: "customer@test.com",
@@ -11,6 +12,9 @@ export default function LoginPage() {
   });
 
   const [message, setMessage] = useState("");
+
+  if (loading) return <div style={{ padding: 24 }}>확인 중...</div>;
+  if (isLoggedIn) return <Navigate to="/" replace />;
 
   const change = (e) => {
     setForm({
@@ -23,13 +27,10 @@ export default function LoginPage() {
     e.preventDefault();
 
     try {
-      const response = await login(form);
-      localStorage.setItem("accessToken", response.data.accessToken);
-
-      setMessage("로그인 성공");
-      navigate("/");
+      await login(form);
+      navigate("/", { replace: true });
     } catch (error) {
-      setMessage(error.response?.data?.detail || "로그인 실패");
+      setMessage(error.response?.data?.detail || error.response?.data?.message || "로그인 실패");
     }
   };
 
@@ -38,25 +39,10 @@ export default function LoginPage() {
         <h2>로그인</h2>
 
         <form onSubmit={submit}>
-          <div>
-            <input
-                name="email"
-                value={form.email}
-                onChange={change}
-                placeholder="이메일"
-            />
-          </div>
-
-          <div>
-            <input
-                name="password"
-                type="password"
-                value={form.password}
-                onChange={change}
-                placeholder="비밀번호"
-            />
-          </div>
-
+          <input name="email" value={form.email} onChange={change} placeholder="이메일" />
+          <br />
+          <input name="password" type="password" value={form.password} onChange={change} placeholder="비밀번호" />
+          <br />
           <button type="submit">로그인</button>
         </form>
 

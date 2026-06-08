@@ -2,6 +2,7 @@ import { loadTossPayments, ANONYMOUS } from "@tosspayments/tosspayments-sdk";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getOrder } from "../api/orderApi";
+import { prepareTossPayment } from "../api/paymentApi";
 
 export default function OrderDetailPage() {
   const { orderId } = useParams();
@@ -71,9 +72,14 @@ export default function OrderDetailPage() {
         return;
       }
 
+      const response = await prepareTossPayment(order.orderId);
+      const prepared = response.data;
+
+      console.log("prepared toss payment =", prepared);
+
       await widgets.requestPayment({
-        orderId: `ORDER-${order.orderId}`,
-        orderName: order.orderLines.map((line) => line.productName).join(", "),
+        orderId: prepared.orderId,
+        orderName: prepared.orderName,
         successUrl: `${window.location.origin}/payments/success`,
         failUrl: `${window.location.origin}/payments/fail`,
         customerEmail: "customer@test.com",
@@ -81,7 +87,7 @@ export default function OrderDetailPage() {
       });
     } catch (error) {
       console.error(error);
-      setMessage(error.message || "결제 요청 실패");
+      setMessage(error.response?.data?.detail || error.message || "결제 요청 실패");
     }
   };
 
