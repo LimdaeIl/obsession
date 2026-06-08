@@ -15,6 +15,7 @@ import com.app.obsession.member.application.command.LoginCommand;
 import com.app.obsession.member.application.port.MemberRepository;
 import com.app.obsession.member.application.port.PasswordEncryptor;
 import com.app.obsession.member.application.port.RefreshTokenRepository;
+import com.app.obsession.member.application.result.LoginResult;
 import com.app.obsession.member.domain.Member;
 import com.app.obsession.member.exception.MemberErrorCode;
 import com.app.obsession.member.exception.MemberException;
@@ -83,10 +84,11 @@ class LoginServiceTest {
         when(tokenHashUtil.sha256(refreshToken)).thenReturn(refreshTokenHash);
         when(jwtProvider.getRefreshTokenExpirationMillis()).thenReturn(1_209_600_000L);
 
-        LoginResponse response = loginService.login(new LoginCommand(email, rawPassword));
+        LoginResult result = loginService.login(new LoginCommand(email, rawPassword));
 
-        assertThat(response.accessToken()).isEqualTo(accessToken);
-        assertThat(response.refreshToken()).isEqualTo(refreshToken);
+        assertThat(result.memberId()).isEqualTo(member.getId());
+        assertThat(result.accessToken()).isEqualTo(accessToken);
+        assertThat(result.refreshToken()).isEqualTo(refreshToken);
 
         verify(refreshTokenRepository).saveHash(
                 eq(member.getId()),

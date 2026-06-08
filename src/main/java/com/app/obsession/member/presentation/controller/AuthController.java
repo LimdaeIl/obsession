@@ -2,20 +2,26 @@ package com.app.obsession.member.presentation.controller;
 
 import com.app.obsession.global.response.CommonResponse;
 import com.app.obsession.global.security.auth.CustomUserDetails;
+import com.app.obsession.global.security.jwt.RefreshTokenCookieProvider;
 import com.app.obsession.member.application.LoginService;
 import com.app.obsession.member.application.LogoutService;
 import com.app.obsession.member.application.ReissueTokenService;
 import com.app.obsession.member.application.SignupService;
+import com.app.obsession.member.application.result.LoginResult;
+import com.app.obsession.member.application.result.ReissueTokenResult;
 import com.app.obsession.member.presentation.dto.LoginRequest;
 import com.app.obsession.member.presentation.dto.LoginResponse;
-import com.app.obsession.member.presentation.dto.ReissueRequest;
 import com.app.obsession.member.presentation.dto.SignupRequest;
 import com.app.obsession.member.presentation.dto.SignupResponse;
 import com.app.obsession.member.presentation.dto.TokenResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -33,6 +39,8 @@ public class AuthController {
     private final ReissueTokenService reissueTokenService;
     private final LogoutService logoutService;
 
+    private final RefreshTokenCookieProvider refreshTokenCookieProvider;
+
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/signup")
     public CommonResponse<SignupResponse> signup(
@@ -48,34 +56,51 @@ public class AuthController {
 
     @PostMapping("/login")
     public CommonResponse<LoginResponse> login(
-            @Valid @RequestBody LoginRequest request
+            @Valid @RequestBody LoginRequest request,
+            HttpServletResponse response
     ) {
-        LoginResponse response = loginService.login(request.toCommand());
+        LoginResult result = loginService.login(request.toCommand());
+
+        ResponseCookie refreshCookie =
+                refreshTokenCookieProvider.createCookie(result.refreshToken());
+
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
         return CommonResponse.success(
                 "로그인: 일반 로그인에 성공했습니다.",
-                response
+                LoginResponse.of(result.memberId(), result.accessToken())
         );
     }
 
     @PostMapping("/reissue")
     public CommonResponse<TokenResponse> reissue(
-            @Valid @RequestBody ReissueRequest request
+            @CookieValue("refreshToken") String refreshToken,
+            HttpServletResponse servletResponse
     ) {
-        TokenResponse response = reissueTokenService.reissue(request.refreshToken());
+        ReissueTokenResult result = reissueTokenService.reissue(refreshToken);
+
+        ResponseCookie refreshCookie =
+                refreshTokenCookieProvider.createCookie(result.refreshToken());
+
+        servletResponse.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
         return CommonResponse.success(
                 "토큰: Access Token 재발급에 성공했습니다.",
-                response
+                TokenResponse.of(result.accessToken())
         );
     }
 
     @PostMapping("/logout")
     public CommonResponse<Void> logout(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestHeader("Authorization") String authorization
+            @RequestHeader("Authorization") String authorization,
+            HttpServletResponse servletResponse
     ) {
         logoutService.logout(userDetails.getMemberId(), authorization);
+
+        ResponseCookie deleteCookie = refreshTokenCookieProvider.deleteCookie();
+
+        servletResponse.addHeader(HttpHeaders.SET_COOKIE, deleteCookie.toString());
 
         return CommonResponse.success(
                 "로그아웃: 로그아웃에 성공했습니다.",

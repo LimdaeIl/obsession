@@ -7,6 +7,7 @@ import com.app.obsession.member.application.command.LoginCommand;
 import com.app.obsession.member.application.port.MemberRepository;
 import com.app.obsession.member.application.port.PasswordEncryptor;
 import com.app.obsession.member.application.port.RefreshTokenRepository;
+import com.app.obsession.member.application.result.LoginResult;
 import com.app.obsession.member.domain.Member;
 import com.app.obsession.member.exception.MemberErrorCode;
 import com.app.obsession.member.exception.MemberException;
@@ -27,7 +28,7 @@ public class LoginService {
     private final TokenHashUtil tokenHashUtil;
 
     @Transactional(readOnly = true)
-    public LoginResponse login(LoginCommand command) {
+    public LoginResult login(LoginCommand command) {
         Member member = memberRepository.findByEmail(command.email())
                 .orElseThrow(() -> new MemberException(MemberErrorCode.INVALID_LOGIN));
 
@@ -56,6 +57,6 @@ public class LoginService {
                 Duration.ofMillis(jwtProvider.getRefreshTokenExpirationMillis())
         );
 
-        return LoginResponse.of(member.getId(), accessToken, refreshToken);
+        return new LoginResult(member.getId(), accessToken, refreshToken);
     }
 }

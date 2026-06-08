@@ -8,6 +8,7 @@ import com.app.obsession.global.security.jwt.JwtProvider;
 import com.app.obsession.global.security.jwt.TokenHashUtil;
 import com.app.obsession.member.application.port.MemberRepository;
 import com.app.obsession.member.application.port.RefreshTokenRepository;
+import com.app.obsession.member.application.result.ReissueTokenResult;
 import com.app.obsession.member.domain.Member;
 import com.app.obsession.member.exception.MemberErrorCode;
 import com.app.obsession.member.exception.MemberException;
@@ -29,7 +30,7 @@ public class ReissueTokenService {
     private final RefreshTokenRepository refreshTokenRepository;
 
     @Transactional
-    public TokenResponse reissue(String refreshToken) {
+    public ReissueTokenResult reissue(String refreshToken) {
         validateRefreshToken(refreshToken);
 
         JwtPayload payload = jwtProvider.parseRefreshPayload(refreshToken);
@@ -59,7 +60,7 @@ public class ReissueTokenService {
             throw new AuthException(AuthErrorCode.REUSED_REFRESH_TOKEN);
         }
 
-        return TokenResponse.of(newAccessToken, newRefreshToken);
+        return new ReissueTokenResult(newAccessToken, newRefreshToken);
     }
 
     private void validateRefreshToken(String refreshToken) {

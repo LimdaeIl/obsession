@@ -5,6 +5,8 @@ import com.app.obsession.order.domain.Order;
 import com.app.obsession.order.domain.OrderLine;
 import com.app.obsession.payment.application.port.PaymentRepository;
 import com.app.obsession.payment.domain.Payment;
+import com.app.obsession.payment.exception.PaymentErrorCode;
+import com.app.obsession.payment.exception.PaymentException;
 import com.app.obsession.payment.infrastructure.external.TossPaymentClient;
 import com.app.obsession.payment.infrastructure.external.TossPaymentResponse;
 import com.app.obsession.product.application.port.ProductStockRepository;
@@ -32,15 +34,33 @@ public class ConfirmTossPaymentService {
     ) {
         Long orderId = parseOrderId(tossOrderId);
 
+        return paymentRepository.findByOrderId(orderId)
+                .map(Payment::getId)
+                .orElseGet(() -> confirmNewPayment(
+                        memberId,
+                        paymentKey,
+                        tossOrderId,
+                        amount,
+                        orderId
+                ));
+    }
+
+    private Long confirmNewPayment(
+            Long memberId,
+            String paymentKey,
+            String tossOrderId,
+            Long amount,
+            Long orderId
+    ) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다."));
+                .orElseThrow(() -> new PaymentException(PaymentErrorCode.ORDER_NOT_FOUND));
 
         if (!order.isPayableBy(memberId)) {
-            throw new IllegalStateException("결제할 수 없는 주문입니다.");
+            throw new PaymentException(PaymentErrorCode.NOT_PAYABLE_ORDER);
         }
 
         if (order.getTotalAmount().compareTo(BigDecimal.valueOf(amount)) != 0) {
-            throw new IllegalArgumentException("결제 금액이 주문 금액과 일치하지 않습니다.");
+            throw new PaymentException(PaymentErrorCode.INVALID_PAYMENT_AMOUNT);
         }
 
         TossPaymentResponse response = tossPaymentClient.confirm(
@@ -50,12 +70,12 @@ public class ConfirmTossPaymentService {
         );
 
         if (!"DONE".equals(response.status())) {
-            throw new IllegalStateException("결제가 정상 승인되지 않았습니다.");
+            throw new PaymentException(PaymentErrorCode.PAYMENT_NOT_APPROVED);
         }
 
         for (OrderLine orderLine : order.getOrderLines()) {
             ProductStock stock = productStockRepository.findByProductId(orderLine.getProductId())
-                    .orElseThrow(() -> new IllegalStateException("상품 재고 정보를 찾을 수 없습니다."));
+                    .orElseThrow(() -> new PaymentException(PaymentErrorCode.PRODUCT_STOCK_NOT_FOUND));
 
             stock.confirm(orderLine.getQuantity());
         }
@@ -77,9 +97,19 @@ public class ConfirmTossPaymentService {
 
     private Long parseOrderId(String tossOrderId) {
         if (tossOrderId == null || !tossOrderId.startsWith("ORDER-")) {
-            throw new IllegalArgumentException("주문번호 형식이 올바르지 않습니다.");
+            throw new PaymentException(PaymentErrorCode.INVALID_ORDER_NUMBER);
         }
 
-        return Long.valueOf(tossOrderId.replace("ORDER-", ""));
+        String[] parts = tossOrderId.split("-");
+
+        if (parts.length < 2) {
+            throw new PaymentException(PaymentErrorCode.INVALID_ORDER_NUMBER);
+        }
+
+        try {
+            return Long.valueOf(parts[1]);
+        } catch (NumberFormatException e) {
+            throw new PaymentException(PaymentErrorCode.INVALID_ORDER_NUMBER);
+        }
     }
 }
