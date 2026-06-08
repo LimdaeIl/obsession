@@ -1,5 +1,7 @@
 package com.app.obsession.payment.domain;
 
-public class PaymentStatus {
-
+public enum PaymentStatus {
+    PAID,
+    FAILED,
+    CANCELED
 }
