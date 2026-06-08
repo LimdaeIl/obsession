@@ -2,6 +2,7 @@ package com.app.obsession.product.infrastructure.persistence;
 
 import com.app.obsession.product.application.port.ProductStockRepository;
 import com.app.obsession.product.domain.ProductStock;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -14,5 +15,10 @@ public class ProductStockRepositoryImpl implements ProductStockRepository {
     @Override
     public ProductStock save(ProductStock productStock) {
         return jpaProductStockRepository.save(productStock);
+    }
+
+    @Override
+    public Optional<ProductStock> findByProductId(Long productId) {
+        return jpaProductStockRepository.findByProductId(productId);
     }
 }
