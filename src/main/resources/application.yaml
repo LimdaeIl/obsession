@@ -40,3 +40,8 @@ jwt:
 app:
   redis:
     key-prefix: ${APP_REDIS_KEY_PREFIX:obsession:local}
+
+payment:
+  toss:
+    secret-key: test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6
+    base-url: https://api.tosspayments.com

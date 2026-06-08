@@ -39,10 +39,7 @@ public record CreateProductRequest(
                         String
                 > imageUrls
 ) {
-    public CreateProductCommand toCommand(
-            Long memberId,
-            String role
-    ) {
+    public CreateProductCommand toCommand(Long memberId, String role) {
         return new CreateProductCommand(
                 new ProductActor(memberId, role),
                 name,

@@ -49,13 +49,10 @@ public class ProductController {
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         RegisterProductResult result = createProductService.create(
-                request.toCommand(
-                        userDetails.getMemberId(),
-                        userDetails.getRole()
-                ));
+                request.toCommand(userDetails.getMemberId(), userDetails.getRole()));
 
         return CommonResponse.created(
-                "상품: 상품 등록에 성공했습니다.",
+                "상품 등록에 성공했습니다.",
                 RegisterProductResponse.from(result)
         );
     }
@@ -78,11 +75,11 @@ public class ProductController {
     public CommonResponse<ProductDetailResponse> getProduct(
             @PathVariable Long productId
     ) {
-        Product product = getProductDetailService.getProduct(productId);
+        ProductDetailResponse response = getProductDetailService.getProduct(productId);
 
         return CommonResponse.success(
-                "상품: 상품 상세 조회에 성공했습니다.",
-                ProductDetailResponse.from(product)
+                "상품 상세 조회에 성공했습니다.",
+                response
         );
     }
 

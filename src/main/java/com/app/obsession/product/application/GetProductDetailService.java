@@ -5,6 +5,7 @@ import com.app.obsession.product.domain.Product;
 import com.app.obsession.product.domain.ProductStatus;
 import com.app.obsession.product.exception.ProductErrorCode;
 import com.app.obsession.product.exception.ProductException;
+import com.app.obsession.product.presentation.dto.ProductDetailResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,14 +17,14 @@ public class GetProductDetailService {
     private final ProductRepository productRepository;
 
     @Transactional(readOnly = true)
-    public Product getProduct(Long productId) {
-        Product product = productRepository.findById(productId)
+    public ProductDetailResponse getProduct(Long productId) {
+        Product product = productRepository.findWithImagesById(productId)
                 .orElseThrow(() -> new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND));
 
         if (product.getStatus() == ProductStatus.DELETED) {
             throw new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND);
         }
 
-        return product;
+        return ProductDetailResponse.from(product);
     }
 }

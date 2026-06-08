@@ -1,7 +1,16 @@
 package com.app.obsession.order.domain;
 
 import com.app.obsession.global.entity.BaseAuditEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +62,7 @@ public class Order extends BaseAuditEntity {
     }
 
     public boolean isOwnedBy(Long memberId) {
-        return !this.memberId.equals(memberId);
+        return memberId != null && this.memberId.equals(memberId);
     }
 
     public void cancel() {
@@ -63,4 +72,17 @@ public class Order extends BaseAuditEntity {
 
         this.status = OrderStatus.CANCELED;
     }
+
+    public void markPaid() {
+        if (this.status != OrderStatus.CREATED) {
+            throw new IllegalStateException("생성 상태의 주문만 결제 완료 처리할 수 있습니다.");
+        }
+
+        this.status = OrderStatus.PAID;
+    }
+
+    public boolean isPayableBy(Long memberId) {
+        return isOwnedBy(memberId) && this.status == OrderStatus.CREATED;
+    }
+
 }

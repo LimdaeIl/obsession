@@ -14,5 +14,4 @@ public record CreateProductCommand(
         int initialStock,
         List<String> imageUrls
 ) {
-
 }

@@ -14,8 +14,10 @@ import com.app.obsession.order.presentation.dto.OrderDetailResponse;
 import com.app.obsession.order.presentation.dto.OrderListResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -57,13 +59,12 @@ public class OrderController {
             @RequestParam(defaultValue = "20") int size,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        var pageable = PageRequest.of(
+        PageRequest pageable = PageRequest.of(
                 page,
                 size,
-                Sort.by(Sort.Direction.DESC, "id")
+                Sort.by(Direction.DESC, "id")
         );
-
-        var orders = getOrderListService.getMyOrders(
+        Page<Order> orders = getOrderListService.getMyOrders(
                 userDetails.getMemberId(),
                 pageable
         );
@@ -79,14 +80,14 @@ public class OrderController {
             @PathVariable Long orderId,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        Order order = getOrderDetailService.getMyOrder(
+        OrderDetailResponse response = getOrderDetailService.getMyOrder(
                 orderId,
                 userDetails.getMemberId()
         );
 
         return CommonResponse.success(
                 "주문 상세 조회에 성공했습니다.",
-                OrderDetailResponse.from(order)
+                response
         );
     }
 

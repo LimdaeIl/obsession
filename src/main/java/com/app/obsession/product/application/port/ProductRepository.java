@@ -13,4 +13,6 @@ public interface ProductRepository {
     Page<Product> search(String keyword, ProductStatus status, Pageable pageable);
 
     Optional<Product> findById(Long productId);
+
+    Optional<Product> findWithImagesById(Long productId);
 }

@@ -60,6 +60,10 @@ public class CreateProductService {
     }
 
     private void validate(CreateProductCommand command) {
+        System.out.println("actor = " + command.actor());
+        System.out.println("role = " + (command.actor() == null ? null : command.actor().role()));
+        System.out.println("canCreate = " + (command.actor() != null && command.actor().canCreateProduct()));
+
         if (command.actor() == null || !command.actor().canCreateProduct()) {
             throw new ProductException(ProductErrorCode.PRODUCT_CREATE_FORBIDDEN);
         }
