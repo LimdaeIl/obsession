@@ -1,6 +1,7 @@
 package com.app.obsession.product.presentation.dto;
 
 import com.app.obsession.product.application.command.CreateProductCommand;
+import com.app.obsession.product.domain.ProductActor;
 import com.app.obsession.product.domain.ProductStatus;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
@@ -38,9 +39,12 @@ public record CreateProductRequest(
                         String
                 > imageUrls
 ) {
-    public CreateProductCommand toCommand(Long memberId) {
+    public CreateProductCommand toCommand(
+            Long memberId,
+            String role
+    ) {
         return new CreateProductCommand(
-                memberId,
+                new ProductActor(memberId, role),
                 name,
                 description,
                 price,

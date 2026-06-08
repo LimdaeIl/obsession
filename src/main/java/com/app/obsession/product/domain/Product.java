@@ -28,6 +28,9 @@ public class Product extends BaseAuditEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "seller_id", nullable = false)
+    private Long sellerId;
+
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
@@ -45,21 +48,34 @@ public class Product extends BaseAuditEntity {
     private List<ProductImage> images = new ArrayList<>();
 
 
-    private Product(String name, String description, BigDecimal price, ProductStatus status) {
+    private Product(
+            Long sellerId,
+            String name,
+            String description,
+            BigDecimal price,
+            ProductStatus status
+    ) {
+        validateSellerId(sellerId);
         validateName(name);
         validateDescription(description);
         validatePrice(price);
         validateInitialStatus(status);
 
+        this.sellerId = sellerId;
         this.name = name;
         this.description = description;
         this.price = price;
         this.status = status;
     }
 
-    public static Product create(String name, String description, BigDecimal price,
-            ProductStatus status) {
-        return new Product(name, description, price, status);
+    public static Product create(
+            Long sellerId,
+            String name,
+            String description,
+            BigDecimal price,
+            ProductStatus status
+    ) {
+        return new Product(sellerId, name, description, price, status);
     }
 
     public void changeName(String name) {
@@ -112,6 +128,29 @@ public class Product extends BaseAuditEntity {
         }
 
         this.images.removeIf(image -> imageId.equals(image.getId()));
+    }
+
+    public void changeStatus(ProductStatus status) {
+
+        if (status == null) {
+            throw new IllegalArgumentException("상품 상태는 필수입니다.");
+        }
+
+        if (this.status == ProductStatus.DELETED) {
+            throw new IllegalStateException("삭제된 상품은 수정할 수 없습니다.");
+        }
+
+        this.status = status;
+    }
+
+    public boolean isOwnedBy(Long memberId) {
+        return this.sellerId.equals(memberId);
+    }
+
+    private static void validateSellerId(Long sellerId) {
+        if (sellerId == null || sellerId <= 0) {
+            throw new IllegalArgumentException("판매자 ID가 올바르지 않습니다.");
+        }
     }
 
     private static void validateName(String name) {

@@ -5,6 +5,7 @@ import com.app.obsession.product.application.port.ProductRepository;
 import com.app.obsession.product.application.port.ProductStockRepository;
 import com.app.obsession.product.application.result.RegisterProductResult;
 import com.app.obsession.product.domain.Product;
+import com.app.obsession.product.domain.ProductActor;
 import com.app.obsession.product.domain.ProductStatus;
 import com.app.obsession.product.domain.ProductStock;
 import lombok.RequiredArgsConstructor;
@@ -22,10 +23,16 @@ public class CreateProductService {
     public RegisterProductResult create(CreateProductCommand command) {
         validate(command);
 
-        Product product = Product.create(command.name(), command.description(), command.price(),
-                command.status());
+        ProductActor actor = command.actor();
 
-        // TODO: 이미지 생성 S3 연결 필요
+        Product product = Product.create(
+                actor.memberId(),
+                command.name(),
+                command.description(),
+                command.price(),
+                command.status()
+        );
+
         if (command.imageUrls() != null) {
             for (int i = 0; i < command.imageUrls().size(); i++) {
                 product.addImage(command.imageUrls().get(i), i + 1);
@@ -51,6 +58,10 @@ public class CreateProductService {
     }
 
     private void validate(CreateProductCommand command) {
+        if (command.actor() == null || !command.actor().canCreateProduct()) {
+            throw new IllegalStateException("상품을 등록할 권한이 없습니다.");
+        }
+
         if (command.status() == ProductStatus.ON_SALE
                 && command.initialStock() <= 0) {
             throw new IllegalArgumentException("판매중 상품은 재고가 1개 이상이어야 합니다.");
