@@ -8,6 +8,8 @@ import com.app.obsession.product.domain.Product;
 import com.app.obsession.product.domain.ProductActor;
 import com.app.obsession.product.domain.ProductStatus;
 import com.app.obsession.product.domain.ProductStock;
+import com.app.obsession.product.exception.ProductErrorCode;
+import com.app.obsession.product.exception.ProductException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,12 +61,12 @@ public class CreateProductService {
 
     private void validate(CreateProductCommand command) {
         if (command.actor() == null || !command.actor().canCreateProduct()) {
-            throw new IllegalStateException("상품을 등록할 권한이 없습니다.");
+            throw new ProductException(ProductErrorCode.PRODUCT_CREATE_FORBIDDEN);
         }
 
         if (command.status() == ProductStatus.ON_SALE
                 && command.initialStock() <= 0) {
-            throw new IllegalArgumentException("판매중 상품은 재고가 1개 이상이어야 합니다.");
+            throw new ProductException(ProductErrorCode.ON_SALE_PRODUCT_REQUIRES_STOCK);
         }
     }
 }

@@ -55,7 +55,7 @@ public class ProductController {
                 ));
 
         return CommonResponse.created(
-                "상품 등록에 성공했습니다.",
+                "상품: 상품 등록에 성공했습니다.",
                 RegisterProductResponse.from(result)
         );
     }
@@ -69,7 +69,7 @@ public class ProductController {
                 request.status(), request.toPageable());
 
         return CommonResponse.success(
-                "상품 목록 조회에 성공했습니다.",
+                "상품: 상품 목록 조회에 성공했습니다.",
                 PageResponse.from(products.map(ProductListResponse::from))
         );
     }
@@ -81,7 +81,7 @@ public class ProductController {
         Product product = getProductDetailService.getProduct(productId);
 
         return CommonResponse.success(
-                "상품 상세 조회에 성공했습니다.",
+                "상품: 상품 상세 조회에 성공했습니다.",
                 ProductDetailResponse.from(product)
         );
     }
@@ -106,7 +106,7 @@ public class ProductController {
                 )
         );
 
-        return CommonResponse.success("상품 수정에 성공했습니다.");
+        return CommonResponse.success("상품: 상품 수정에 성공했습니다.");
     }
 
     // TODO: 상품 삭제
@@ -125,7 +125,7 @@ public class ProductController {
                 )
         );
 
-        return CommonResponse.success("상품 삭제에 성공했습니다.");
+        return CommonResponse.success("상품: 상품 삭제에 성공했습니다.");
     }
 
 }

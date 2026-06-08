@@ -1,6 +1,8 @@
 package com.app.obsession.product.domain;
 
 import com.app.obsession.global.entity.BaseAuditEntity;
+import com.app.obsession.product.exception.ProductErrorCode;
+import com.app.obsession.product.exception.ProductException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -50,23 +52,23 @@ public class ProductImage extends BaseAuditEntity {
 
     private static void validateProduct(Product product) {
         if (product == null) {
-            throw new IllegalArgumentException("상품은 필수입니다.");
+            throw new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND);
         }
     }
 
     private static void validateImageUrl(String imageUrl) {
         if (imageUrl == null || imageUrl.isBlank()) {
-            throw new IllegalArgumentException("상품 이미지 URL은 필수입니다.");
+            throw new ProductException(ProductErrorCode.INVALID_IMAGE_URL);
         }
 
         if (imageUrl.length() > 500) {
-            throw new IllegalArgumentException("상품 이미지 URL은 500자를 초과할 수 없습니다.");
+            throw new ProductException(ProductErrorCode.PRODUCT_IMAGE_URL_TOO_LONG);
         }
     }
 
     private static void validateSortOrder(int sortOrder) {
         if (sortOrder < 0) {
-            throw new IllegalArgumentException("이미지 정렬 순서는 0 이상이어야 합니다.");
+            throw new ProductException(ProductErrorCode.INVALID_IMAGE_SORT_ORDER);
         }
     }
 }
