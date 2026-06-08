@@ -34,6 +34,16 @@ public record CommonResponse<T>(
         );
     }
 
+    public static <T> CommonResponse<T> success(String message) {
+        return new CommonResponse<>(
+                true,
+                200,
+                message,
+                null,
+                LocalDateTime.now(SEOUL)
+        );
+    }
+
     public static <T> CommonResponse<T> created(T data) {
         return new CommonResponse<>(
                 true,
