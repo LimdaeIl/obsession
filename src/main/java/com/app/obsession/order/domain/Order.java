@@ -51,4 +51,8 @@ public class Order extends BaseAuditEntity {
         this.orderLines.add(orderLine);
         this.totalAmount = this.totalAmount.add(orderLine.getLineAmount());
     }
+
+    public boolean isOwnedBy(Long memberId) {
+        return memberId != null && this.memberId.equals(memberId);
+    }
 }
