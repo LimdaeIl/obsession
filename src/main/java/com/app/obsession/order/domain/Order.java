@@ -53,6 +53,14 @@ public class Order extends BaseAuditEntity {
     }
 
     public boolean isOwnedBy(Long memberId) {
-        return memberId != null && this.memberId.equals(memberId);
+        return !this.memberId.equals(memberId);
+    }
+
+    public void cancel() {
+        if (this.status != OrderStatus.CREATED) {
+            throw new IllegalStateException("생성 상태의 주문만 취소할 수 있습니다.");
+        }
+
+        this.status = OrderStatus.CANCELED;
     }
 }
