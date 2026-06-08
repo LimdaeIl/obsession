@@ -3,6 +3,7 @@ package com.app.obsession.order.presentation.controller;
 import com.app.obsession.global.response.CommonResponse;
 import com.app.obsession.global.response.PageResponse;
 import com.app.obsession.global.security.auth.CustomUserDetails;
+import com.app.obsession.order.application.CancelOrderService;
 import com.app.obsession.order.application.CreateOrderService;
 import com.app.obsession.order.application.GetOrderDetailService;
 import com.app.obsession.order.application.GetOrderListService;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,6 +34,7 @@ public class OrderController {
     private final CreateOrderService createOrderService;
     private final GetOrderListService getOrderListService;
     private final GetOrderDetailService getOrderDetailService;
+    private final CancelOrderService cancelOrderService;
 
     @PostMapping
     public CommonResponse<CreateOrderResponse> create(
@@ -86,4 +89,18 @@ public class OrderController {
                 OrderDetailResponse.from(order)
         );
     }
+
+    @PatchMapping("/{orderId}/cancel")
+    public CommonResponse<Void> cancel(
+            @PathVariable Long orderId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        cancelOrderService.cancel(
+                orderId,
+                userDetails.getMemberId()
+        );
+
+        return CommonResponse.success("주문 취소에 성공했습니다.");
+    }
+
 }
