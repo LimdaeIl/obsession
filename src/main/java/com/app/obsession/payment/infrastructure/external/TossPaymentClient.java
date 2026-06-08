@@ -1,14 +1,18 @@
 package com.app.obsession.payment.infrastructure.external;
 
+import com.app.obsession.payment.exception.PaymentErrorCode;
+import com.app.obsession.payment.exception.PaymentException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClient;
 
+@Slf4j(topic = "TossPaymentClient")
 @Component
 public class TossPaymentClient {
 
@@ -42,10 +46,12 @@ public class TossPaymentClient {
                     .body(TossPaymentResponse.class);
 
         } catch (HttpStatusCodeException e) {
-            throw new IllegalStateException(
-                    "토스 결제 승인 실패: status=" + e.getStatusCode()
-                            + ", body=" + e.getResponseBodyAsString()
+            log.warn("Toss payment confirm failed. status={}, body={}",
+                    e.getStatusCode(),
+                    e.getResponseBodyAsString()
             );
+
+            throw new PaymentException(PaymentErrorCode.PAYMENT_CONFIRM_FAILED);
         }
     }
 
