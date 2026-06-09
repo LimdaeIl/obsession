@@ -44,6 +44,7 @@ dependencies {
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.13.0' // or 'io.jsonwebtoken:jjwt-gson:0.13.0' for gson
 
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.redisson:redisson:3.39.0'
 
 
 }
