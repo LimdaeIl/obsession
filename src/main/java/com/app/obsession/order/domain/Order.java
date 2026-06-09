@@ -1,6 +1,8 @@
 package com.app.obsession.order.domain;
 
 import com.app.obsession.global.entity.BaseAuditEntity;
+import com.app.obsession.order.exception.OrderErrorCode;
+import com.app.obsession.order.exception.OrderException;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -43,7 +45,7 @@ public class Order extends BaseAuditEntity {
 
     private Order(Long memberId) {
         if (memberId == null || memberId <= 0) {
-            throw new IllegalArgumentException("회원 ID가 올바르지 않습니다.");
+            throw new OrderException(OrderErrorCode.INVALID_MEMBER_ID);
         }
 
         this.memberId = memberId;
@@ -67,7 +69,7 @@ public class Order extends BaseAuditEntity {
 
     public void cancel() {
         if (this.status != OrderStatus.CREATED) {
-            throw new IllegalStateException("생성 상태의 주문만 취소할 수 있습니다.");
+            throw new OrderException(OrderErrorCode.ONLY_CREATED_ORDER_CAN_BE_CANCELED);
         }
 
         this.status = OrderStatus.CANCELED;
@@ -75,7 +77,7 @@ public class Order extends BaseAuditEntity {
 
     public void markPaid() {
         if (this.status != OrderStatus.CREATED) {
-            throw new IllegalStateException("생성 상태의 주문만 결제 완료 처리할 수 있습니다.");
+            throw new OrderException(OrderErrorCode.ONLY_CREATED_ORDER_CAN_BE_PAID);
         }
 
         this.status = OrderStatus.PAID;

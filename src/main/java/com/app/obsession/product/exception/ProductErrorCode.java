@@ -44,7 +44,8 @@ public enum ProductErrorCode implements ErrorCode {
 
     PRODUCT_CREATE_FORBIDDEN(HttpStatus.FORBIDDEN, "상품: 상품을 등록할 권한이 없습니다."),
     PRODUCT_UPDATE_FORBIDDEN(HttpStatus.FORBIDDEN, "상품: 상품을 수정할 권한이 없습니다."),
-    PRODUCT_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "상품: 상품을 삭제할 권한이 없습니다.");
+    PRODUCT_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "상품: 상품을 삭제할 권한이 없습니다."),
+    NOT_ON_SALE_PRODUCT(HttpStatus.BAD_REQUEST, "상품: 판매 중인 상품이 아닙니다."),;
 
     private final HttpStatus httpStatus;
     private final String messageTemplate;

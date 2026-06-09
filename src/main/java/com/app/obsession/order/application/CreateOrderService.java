@@ -1,63 +1,74 @@
 package com.app.obsession.order.application;
 
+import com.app.obsession.global.lock.DistributedLockExecutor;
+import com.app.obsession.global.redis.RedisKey;
 import com.app.obsession.order.application.command.CreateOrderCommand;
-import com.app.obsession.order.application.port.OrderRepository;
-import com.app.obsession.order.domain.Order;
-import com.app.obsession.product.application.port.ProductRepository;
-import com.app.obsession.product.application.port.ProductStockRepository;
-import com.app.obsession.product.domain.Product;
-import com.app.obsession.product.domain.ProductStock;
+import com.app.obsession.order.exception.OrderErrorCode;
+import com.app.obsession.order.exception.OrderException;
+import java.time.Duration;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
 public class CreateOrderService {
 
-    private final OrderRepository orderRepository;
-    private final ProductRepository productRepository;
-    private final ProductStockRepository productStockRepository;
+    private static final Duration STOCK_LOCK_WAIT_TIME = Duration.ofSeconds(3);
+    private static final Duration STOCK_LOCK_LEASE_TIME = Duration.ofSeconds(5);
 
-    @Transactional
+    private final DistributedLockExecutor distributedLockExecutor;
+    private final RedisKey redisKey;
+    private final CreateOrderProcessor createOrderProcessor;
+
     public Long create(CreateOrderCommand command) {
         validate(command);
 
-        Order order = Order.create(command.memberId());
+        List<Long> productIds = command.orderLines()
+                .stream()
+                .map(CreateOrderCommand.OrderLineCommand::productId)
+                .distinct()
+                .sorted()
+                .toList();
 
-        for (CreateOrderCommand.OrderLineCommand line : command.orderLines()) {
-            Product product = productRepository.findById(line.productId())
-                    .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다."));
-
-            if (!product.getStatus().canSell()) {
-                throw new IllegalStateException("판매 중인 상품만 주문할 수 있습니다.");
-            }
-
-            ProductStock stock = productStockRepository.findByProductId(product.getId())
-                    .orElseThrow(() -> new IllegalStateException("상품 재고 정보를 찾을 수 없습니다."));
-
-            stock.reserve(line.quantity());
-
-            order.addOrderLine(
-                    product.getId(),
-                    product.getName(),
-                    product.getPrice(),
-                    line.quantity()
-            );
-        }
-
-        Order savedOrder = orderRepository.save(order);
-
-        return savedOrder.getId();
+        return createWithLocks(productIds, command);
     }
 
     private void validate(CreateOrderCommand command) {
         if (command.memberId() == null || command.memberId() <= 0) {
-            throw new IllegalArgumentException("회원 ID가 올바르지 않습니다.");
+            throw new OrderException(OrderErrorCode.INVALID_MEMBER_ID);
         }
 
         if (command.orderLines() == null || command.orderLines().isEmpty()) {
-            throw new IllegalArgumentException("주문 상품은 1개 이상이어야 합니다.");
+            throw new OrderException(OrderErrorCode.EMPTY_ORDER_LINES);
         }
     }
+
+    private Long createWithLocks(List<Long> productIds, CreateOrderCommand command) {
+        if (productIds.isEmpty()) {
+            throw new OrderException(OrderErrorCode.EMPTY_ORDER_LINES);
+        }
+
+        return executeLocksRecursively(productIds, 0, command);
+    }
+
+    private Long executeLocksRecursively(
+            List<Long> productIds,
+            int index,
+            CreateOrderCommand command
+    ) {
+        if (index == productIds.size()) {
+            return createOrderProcessor.create(command);
+        }
+
+        Long productId = productIds.get(index);
+
+        return distributedLockExecutor.execute(
+                redisKey.productStockLock(productId),
+                STOCK_LOCK_WAIT_TIME,
+                STOCK_LOCK_LEASE_TIME,
+                () -> executeLocksRecursively(productIds, index + 1, command)
+        );
+    }
 }
+

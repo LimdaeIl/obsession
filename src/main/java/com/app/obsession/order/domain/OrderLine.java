@@ -1,6 +1,8 @@
 package com.app.obsession.order.domain;
 
 import com.app.obsession.global.entity.BaseAuditEntity;
+import com.app.obsession.order.exception.OrderErrorCode;
+import com.app.obsession.order.exception.OrderException;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import lombok.AccessLevel;
@@ -44,19 +46,19 @@ public class OrderLine extends BaseAuditEntity {
             int quantity
     ) {
         if (order == null) {
-            throw new IllegalArgumentException("주문은 필수입니다.");
+            throw new OrderException(OrderErrorCode.INVALID_ORDER_LINE);
         }
         if (productId == null || productId <= 0) {
-            throw new IllegalArgumentException("상품 ID가 올바르지 않습니다.");
+            throw new OrderException(OrderErrorCode.INVALID_PRODUCT_ID);
         }
         if (productName == null || productName.isBlank()) {
-            throw new IllegalArgumentException("상품명은 필수입니다.");
+            throw new OrderException(OrderErrorCode.INVALID_PRODUCT_NAME);
         }
         if (price == null || price.signum() <= 0) {
-            throw new IllegalArgumentException("상품 가격은 0보다 커야 합니다.");
+            throw new OrderException(OrderErrorCode.INVALID_PRODUCT_PRICE);
         }
         if (quantity <= 0) {
-            throw new IllegalArgumentException("주문 수량은 1 이상이어야 합니다.");
+            throw new OrderException(OrderErrorCode.INVALID_ORDER_QUANTITY);
         }
 
         this.order = order;

@@ -3,8 +3,12 @@ package com.app.obsession.order.application;
 import com.app.obsession.order.application.port.OrderRepository;
 import com.app.obsession.order.domain.Order;
 import com.app.obsession.order.domain.OrderLine;
+import com.app.obsession.order.exception.OrderErrorCode;
+import com.app.obsession.order.exception.OrderException;
 import com.app.obsession.product.application.port.ProductStockRepository;
 import com.app.obsession.product.domain.ProductStock;
+import com.app.obsession.product.exception.ProductErrorCode;
+import com.app.obsession.product.exception.ProductException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,15 +23,15 @@ public class CancelOrderService {
     @Transactional
     public void cancel(Long orderId, Long memberId) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다."));
+                .orElseThrow(() -> new OrderException(OrderErrorCode.ORDER_NOT_FOUND));
 
-        if (order.isOwnedBy(memberId)) {
-            throw new IllegalStateException("주문을 취소할 권한이 없습니다.");
+        if (!order.isOwnedBy(memberId)) {
+            throw new OrderException(OrderErrorCode.ORDER_ACCESS_DENIED);
         }
 
         for (OrderLine orderLine : order.getOrderLines()) {
             ProductStock stock = productStockRepository.findByProductId(orderLine.getProductId())
-                    .orElseThrow(() -> new IllegalStateException("상품 재고 정보를 찾을 수 없습니다."));
+                    .orElseThrow(() -> new ProductException(ProductErrorCode.PRODUCT_STOCK_NOT_FOUND));
 
             stock.release(orderLine.getQuantity());
         }
