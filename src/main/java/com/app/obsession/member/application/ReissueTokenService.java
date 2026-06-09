@@ -12,7 +12,6 @@ import com.app.obsession.member.application.result.ReissueTokenResult;
 import com.app.obsession.member.domain.Member;
 import com.app.obsession.member.exception.MemberErrorCode;
 import com.app.obsession.member.exception.MemberException;
-import com.app.obsession.member.presentation.dto.TokenResponse;
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
