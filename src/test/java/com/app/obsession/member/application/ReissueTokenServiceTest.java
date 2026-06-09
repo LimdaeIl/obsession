@@ -17,10 +17,10 @@ import com.app.obsession.global.security.jwt.TokenHashUtil;
 import com.app.obsession.global.security.jwt.TokenType;
 import com.app.obsession.member.application.port.MemberRepository;
 import com.app.obsession.member.application.port.RefreshTokenRepository;
+import com.app.obsession.member.application.result.ReissueTokenResult;
 import com.app.obsession.member.domain.Member;
 import com.app.obsession.member.exception.MemberErrorCode;
 import com.app.obsession.member.exception.MemberException;
-import com.app.obsession.member.presentation.dto.TokenResponse;
 import java.time.Duration;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -84,10 +84,10 @@ class ReissueTokenServiceTest {
                 eq(Duration.ofMillis(1_209_600_000L))
         )).thenReturn(true);
 
-        TokenResponse response = reissueTokenService.reissue(oldRefreshToken);
+        ReissueTokenResult result = reissueTokenService.reissue(oldRefreshToken);
 
-        assertThat(response.accessToken()).isEqualTo(newAccessToken);
-        assertThat(response.refreshToken()).isEqualTo(newRefreshToken);
+        assertThat(result.accessToken()).isEqualTo(newAccessToken);
+        assertThat(result.refreshToken()).isEqualTo(newRefreshToken);
 
         verify(refreshTokenRepository).rotateIfMatches(
                 eq(memberId),
