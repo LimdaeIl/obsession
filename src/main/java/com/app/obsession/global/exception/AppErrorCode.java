@@ -27,7 +27,11 @@ public enum AppErrorCode implements ErrorCode {
 
     // 보안
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "공통: 인증이 필요합니다."),
-    ACCESS_DENIED(HttpStatus.FORBIDDEN, "공통: 권한이 없습니다.");
+    ACCESS_DENIED(HttpStatus.FORBIDDEN, "공통: 권한이 없습니다."),
+
+    // 동시성/락
+    LOCK_ACQUISITION_FAILED(HttpStatus.CONFLICT, "공통: 요청이 몰려 처리하지 못했습니다. 잠시 후 다시 시도해주세요."),
+    LOCK_INTERRUPTED(HttpStatus.INTERNAL_SERVER_ERROR, "공통: 락 획득 중 인터럽트가 발생했습니다.");
 
     private final HttpStatus httpStatus;
     private final String messageTemplate;

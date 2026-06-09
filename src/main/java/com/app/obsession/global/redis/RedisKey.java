@@ -9,6 +9,7 @@ public class RedisKey {
 
     private static final String REFRESH_TOKEN_PREFIX = "auth:refresh-token:";
     private static final String ACCESS_TOKEN_BLACKLIST_PREFIX = "auth:blacklist:access-token:";
+    private static final String PRODUCT_STOCK_LOCK_PREFIX = "lock:product-stock:";
 
     private final RedisKeyProperties redisKeyProperties;
 
@@ -29,5 +30,9 @@ public class RedisKey {
         }
 
         return keyPrefix;
+    }
+
+    public String productStockLock(Long productId) {
+        return prefix() + ":" + PRODUCT_STOCK_LOCK_PREFIX + productId;
     }
 }
