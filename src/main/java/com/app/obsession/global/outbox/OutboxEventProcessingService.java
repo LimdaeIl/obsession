@@ -1,5 +1,7 @@
 package com.app.obsession.global.outbox;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,10 +15,14 @@ public class OutboxEventProcessingService {
 
     private final OutboxEventRepository outboxEventRepository;
     private final List<OutboxEventProcessor> processors;
+    private static final int MAX_RETRY_COUNT = 5;
+    private static final long RETRY_DELAY_MINUTES = 5;
+    private final Clock clock;
 
     @Transactional
     public void processPendingEvents() {
-        List<OutboxEvent> events = outboxEventRepository.findPendingEvents();
+        LocalDateTime now = LocalDateTime.now(clock);
+        List<OutboxEvent> events = outboxEventRepository.findRetryDuePendingEvents(now);
 
         for (OutboxEvent event : events) {
             process(event);
@@ -47,7 +53,16 @@ public class OutboxEventProcessingService {
                     event.getEventType(),
                     e
             );
-            event.markFailed();
+            if (!event.canRetry(MAX_RETRY_COUNT)) {
+                event.markFailed();
+                return;
+            }
+
+            event.retryLater(
+                    LocalDateTime.now(clock)
+                            .plusMinutes(RETRY_DELAY_MINUTES),
+                    e.getMessage()
+            );
         }
     }
 }

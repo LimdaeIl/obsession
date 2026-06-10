@@ -2,6 +2,9 @@ package com.app.obsession.order.infrastructure.persistence;
 
 import com.app.obsession.order.application.port.OrderRepository;
 import com.app.obsession.order.domain.Order;
+import com.app.obsession.order.domain.OrderStatus;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -27,5 +30,13 @@ public class OrderRepositoryImpl implements OrderRepository {
     @Override
     public Optional<Order> findById(Long orderId) {
         return jpaOrderRepository.findById(orderId);
+    }
+
+    @Override
+    public List<Order> findExpiredCreatedOrders(LocalDateTime expiredBefore) {
+        return jpaOrderRepository.findTop50ByStatusAndCreatedAtBeforeOrderByIdAsc(
+                OrderStatus.CREATED,
+                expiredBefore
+        );
     }
 }

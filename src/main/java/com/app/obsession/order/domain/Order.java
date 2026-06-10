@@ -95,4 +95,28 @@ public class Order extends BaseAuditEntity {
         return isOwnedBy(memberId) && this.status == OrderStatus.CREATED;
     }
 
+    public void cancelCreatedOrder() {
+        if (this.status != OrderStatus.CREATED) {
+            throw new OrderException(OrderErrorCode.ONLY_CANCELABLE_ORDER_CAN_BE_CANCELED);
+        }
+
+        this.status = OrderStatus.CANCELED;
+    }
+
+    public void requestPaidOrderCancel() {
+        if (this.status != OrderStatus.PAID) {
+            throw new OrderException(OrderErrorCode.ONLY_CANCELABLE_ORDER_CAN_BE_CANCELED);
+        }
+
+        this.status = OrderStatus.CANCEL_REQUESTED;
+    }
+
+    public void completePaidOrderCancel() {
+        if (this.status != OrderStatus.CANCEL_REQUESTED) {
+            throw new OrderException(OrderErrorCode.ONLY_CANCELABLE_ORDER_CAN_BE_CANCELED);
+        }
+
+        this.status = OrderStatus.CANCELED;
+    }
+
 }
