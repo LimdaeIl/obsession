@@ -8,7 +8,10 @@ import com.app.obsession.order.domain.OrderLine;
 import com.app.obsession.order.domain.OrderStatus;
 import com.app.obsession.order.domain.OrderStatusHistory;
 import com.app.obsession.payment.application.port.PaymentRepository;
+import com.app.obsession.payment.application.port.PaymentStatusHistoryRepository;
 import com.app.obsession.payment.domain.Payment;
+import com.app.obsession.payment.domain.PaymentStatus;
+import com.app.obsession.payment.domain.PaymentStatusHistory;
 import com.app.obsession.payment.exception.PaymentErrorCode;
 import com.app.obsession.payment.exception.PaymentException;
 import com.app.obsession.payment.infrastructure.external.TossPaymentClient;
@@ -32,6 +35,7 @@ public class ConfirmTossPaymentProcessor {
     private final TossPaymentClient tossPaymentClient;
     private final OutboxEventService outboxEventService;
     private final OrderStatusHistoryRepository orderStatusHistoryRepository;
+    private final PaymentStatusHistoryRepository paymentStatusHistoryRepository;
 
     @Transactional
     public Long confirm(
@@ -90,9 +94,21 @@ public class ConfirmTossPaymentProcessor {
                 )
         );
 
+        PaymentStatus paymentFromStatus = payment.getStatus();
+
         payment.approve(
                 response.paymentKey(),
                 response.method()
+        );
+
+        paymentStatusHistoryRepository.save(
+                PaymentStatusHistory.record(
+                        payment.getId(),
+                        payment.getOrderId(),
+                        paymentFromStatus,
+                        PaymentStatus.APPROVED,
+                        "PAYMENT_APPROVED"
+                )
         );
 
         return payment.getId();
@@ -152,7 +168,18 @@ public class ConfirmTossPaymentProcessor {
                 )
         );
 
+        PaymentStatus paymentFromStatus = payment.getStatus();
         payment.fail();
+
+        paymentStatusHistoryRepository.save(
+                PaymentStatusHistory.record(
+                        payment.getId(),
+                        payment.getOrderId(),
+                        paymentFromStatus,
+                        PaymentStatus.FAILED,
+                        "PAYMENT_FAILED"
+                )
+        );
 
         try {
             releaseStocks(order);
