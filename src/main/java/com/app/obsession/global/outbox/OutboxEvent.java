@@ -2,6 +2,7 @@ package com.app.obsession.global.outbox;
 
 import com.app.obsession.global.entity.BaseTimeEntity;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -26,10 +27,20 @@ public class OutboxEvent extends BaseTimeEntity {
     @Column(name = "status", nullable = false, length = 30)
     private OutboxStatus status;
 
+    @Column(name = "retry_count", nullable = false)
+    private int retryCount;
+
+    @Column(name = "next_retry_at")
+    private LocalDateTime nextRetryAt;
+
+    @Column(name = "last_error_message", length = 1000)
+    private String lastErrorMessage;
+
     private OutboxEvent(String eventType, String payload) {
         this.eventType = eventType;
         this.payload = payload;
         this.status = OutboxStatus.PENDING;
+        this.retryCount = 0;
     }
 
     public static OutboxEvent pending(String eventType, String payload) {
@@ -46,5 +57,22 @@ public class OutboxEvent extends BaseTimeEntity {
 
     public boolean isPending() {
         return this.status == OutboxStatus.PENDING;
+    }
+
+    public boolean canRetry(int maxRetryCount) {
+        return this.retryCount < maxRetryCount;
+    }
+
+    public void retryLater(
+            LocalDateTime nextRetryAt,
+            String errorMessage
+    ) {
+        this.retryCount++;
+        this.nextRetryAt = nextRetryAt;
+        this.lastErrorMessage = errorMessage;
+    }
+
+    public boolean isRetryDue(LocalDateTime now) {
+        return nextRetryAt == null || !nextRetryAt.isAfter(now);
     }
 }

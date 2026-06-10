@@ -15,6 +15,6 @@ public class OutboxEventRepository {
     }
 
     public List<OutboxEvent> findPendingEvents() {
-        return jpaOutboxEventRepository.findTop20ByStatusOrderByIdAsc(OutboxStatus.PENDING);
+        return jpaOutboxEventRepository.findTop50ByStatusOrderByIdAsc(OutboxStatus.PENDING);
     }
 }
