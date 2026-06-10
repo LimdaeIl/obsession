@@ -26,7 +26,8 @@ public enum OrderErrorCode implements ErrorCode {
     ORDER_PAYMENT_DENIED(HttpStatus.BAD_REQUEST, "주문: 결제할 수 없는 주문입니다."),
 
     ONLY_CREATED_ORDER_CAN_BE_CANCELED(HttpStatus.BAD_REQUEST, "주문: 생성 상태의 주문만 취소할 수 있습니다."),
-    ONLY_CREATED_ORDER_CAN_BE_PAID(HttpStatus.BAD_REQUEST, "주문: 생성 상태의 주문만 결제 완료 처리할 수 있습니다.");
+    ONLY_CREATED_ORDER_CAN_BE_PAID(HttpStatus.BAD_REQUEST, "주문: 생성 상태의 주문만 결제 완료 처리할 수 있습니다."),
+    ONLY_CREATED_ORDER_CAN_BE_FAILED(HttpStatus.BAD_REQUEST, "주문: 생성 상태의 주문만 실패 처리할 수 있습니다.");
 
     private final HttpStatus httpStatus;
     private final String messageTemplate;

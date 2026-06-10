@@ -1,6 +1,8 @@
 package com.app.obsession.payment.domain;
 
 import com.app.obsession.global.entity.BaseAuditEntity;
+import com.app.obsession.payment.exception.PaymentErrorCode;
+import com.app.obsession.payment.exception.PaymentException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -30,7 +32,7 @@ public class Payment extends BaseAuditEntity {
     @Column(name = "toss_order_id", nullable = false, unique = true, length = 64)
     private String tossOrderId;
 
-    @Column(name = "payment_key", nullable = false, unique = true, length = 200)
+    @Column(name = "payment_key", unique = true, length = 200)
     private String paymentKey;
 
     @Column(name = "amount", nullable = false, precision = 12, scale = 2)
@@ -46,33 +48,77 @@ public class Payment extends BaseAuditEntity {
     private Payment(
             Long orderId,
             String tossOrderId,
-            String paymentKey,
-            BigDecimal amount,
-            PaymentStatus status,
-            String method
+            BigDecimal amount
     ) {
+        validateReady(orderId, tossOrderId, amount);
+
         this.orderId = orderId;
         this.tossOrderId = tossOrderId;
-        this.paymentKey = paymentKey;
         this.amount = amount;
-        this.status = status;
-        this.method = method;
+        this.status = PaymentStatus.READY;
     }
 
-    public static Payment paid(
+    public static Payment ready(
             Long orderId,
             String tossOrderId,
+            BigDecimal amount
+    ) {
+        return new Payment(orderId, tossOrderId, amount);
+    }
+
+    public void approve(
             String paymentKey,
-            BigDecimal amount,
             String method
     ) {
-        return new Payment(
-                orderId,
-                tossOrderId,
-                paymentKey,
-                amount,
-                PaymentStatus.PAID,
-                method
-        );
+        if (this.status != PaymentStatus.READY) {
+            throw new PaymentException(PaymentErrorCode.ONLY_READY_PAYMENT_CAN_BE_APPROVED);
+        }
+        if (paymentKey == null || paymentKey.isBlank()) {
+            throw new PaymentException(PaymentErrorCode.INVALID_PAYMENT_KEY);
+        }
+
+        this.paymentKey = paymentKey;
+        this.method = method;
+        this.status = PaymentStatus.APPROVED;
+    }
+
+    public void fail() {
+        if (this.status != PaymentStatus.READY) {
+            throw new PaymentException(PaymentErrorCode.ONLY_READY_PAYMENT_CAN_BE_FAILED);
+        }
+
+        this.status = PaymentStatus.FAILED;
+    }
+
+    public void cancel() {
+        if (this.status != PaymentStatus.APPROVED) {
+            throw new PaymentException(PaymentErrorCode.ONLY_APPROVED_PAYMENT_CAN_BE_CANCELED);
+        }
+
+        this.status = PaymentStatus.CANCELED;
+    }
+
+    public boolean isReady() {
+        return this.status == PaymentStatus.READY;
+    }
+
+    public boolean isApproved() {
+        return this.status == PaymentStatus.APPROVED;
+    }
+
+    private void validateReady(
+            Long orderId,
+            String tossOrderId,
+            BigDecimal amount
+    ) {
+        if (orderId == null || orderId <= 0) {
+            throw new PaymentException(PaymentErrorCode.INVALID_ORDER_ID);
+        }
+        if (tossOrderId == null || tossOrderId.isBlank()) {
+            throw new PaymentException(PaymentErrorCode.INVALID_ORDER_NUMBER);
+        }
+        if (amount == null || amount.signum() <= 0) {
+            throw new PaymentException(PaymentErrorCode.INVALID_PAYMENT_AMOUNT);
+        }
     }
 }
