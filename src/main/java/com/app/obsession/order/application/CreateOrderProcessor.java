@@ -2,7 +2,10 @@ package com.app.obsession.order.application;
 
 import com.app.obsession.order.application.command.CreateOrderCommand;
 import com.app.obsession.order.application.port.OrderRepository;
+import com.app.obsession.order.application.port.OrderStatusHistoryRepository;
 import com.app.obsession.order.domain.Order;
+import com.app.obsession.order.domain.OrderStatus;
+import com.app.obsession.order.domain.OrderStatusHistory;
 import com.app.obsession.product.application.port.ProductRepository;
 import com.app.obsession.product.application.port.ProductStockRepository;
 import com.app.obsession.product.domain.Product;
@@ -20,6 +23,7 @@ public class CreateOrderProcessor {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final ProductStockRepository productStockRepository;
+    private final OrderStatusHistoryRepository orderStatusHistoryRepository;
 
     @Transactional
     public Long create(CreateOrderCommand command) {
@@ -47,6 +51,14 @@ public class CreateOrderProcessor {
         }
 
         Order savedOrder = orderRepository.save(order);
+        orderStatusHistoryRepository.save(
+                OrderStatusHistory.record(
+                        savedOrder.getId(),
+                        null,
+                        OrderStatus.CREATED,
+                        "ORDER_CREATED"
+                )
+        );
 
         return savedOrder.getId();
     }
