@@ -1,5 +1,6 @@
 package com.app.obsession.global.outbox;
 
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -11,5 +12,9 @@ public class OutboxEventRepository {
 
     public OutboxEvent save(OutboxEvent event) {
         return jpaOutboxEventRepository.save(event);
+    }
+
+    public List<OutboxEvent> findPendingEvents() {
+        return jpaOutboxEventRepository.findTop20ByStatusOrderByIdAsc(OutboxStatus.PENDING);
     }
 }
