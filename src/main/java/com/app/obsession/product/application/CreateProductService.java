@@ -60,16 +60,15 @@ public class CreateProductService {
     }
 
     private void validate(CreateProductCommand command) {
-        System.out.println("actor = " + command.actor());
-        System.out.println("role = " + (command.actor() == null ? null : command.actor().role()));
-        System.out.println("canCreate = " + (command.actor() != null && command.actor().canCreateProduct()));
+        if (command == null) {
+            throw new ProductException(ProductErrorCode.INVALID_PRODUCT);
+        }
 
         if (command.actor() == null || !command.actor().canCreateProduct()) {
             throw new ProductException(ProductErrorCode.PRODUCT_CREATE_FORBIDDEN);
         }
 
-        if (command.status() == ProductStatus.ON_SALE
-                && command.initialStock() <= 0) {
+        if (command.status() == ProductStatus.ON_SALE && command.initialStock() <= 0) {
             throw new ProductException(ProductErrorCode.ON_SALE_PRODUCT_REQUIRES_STOCK);
         }
     }

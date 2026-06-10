@@ -26,7 +26,7 @@ public class UpdateProductService {
             throw new ProductException(ProductErrorCode.DELETED_PRODUCT_CANNOT_BE_UPDATED);
         }
 
-        if (!ProductPermissionPolicy.canManage(product, command.actor())) {
+        if (ProductPermissionPolicy.canManage(product, command.actor())) {
             throw new ProductException(ProductErrorCode.PRODUCT_UPDATE_FORBIDDEN);
         }
 

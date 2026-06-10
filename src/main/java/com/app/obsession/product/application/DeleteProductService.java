@@ -26,7 +26,7 @@ public class DeleteProductService {
             throw new ProductException(ProductErrorCode.ALREADY_DELETED_PRODUCT);
         }
 
-        if (!ProductPermissionPolicy.canManage(product, command.actor())) {
+        if (ProductPermissionPolicy.canManage(product, command.actor())) {
             throw new ProductException(ProductErrorCode.PRODUCT_DELETE_FORBIDDEN);
         }
 
