@@ -2,8 +2,11 @@ package com.app.obsession.payment.application;
 
 import com.app.obsession.global.outbox.OutboxEventService;
 import com.app.obsession.order.application.port.OrderRepository;
+import com.app.obsession.order.application.port.OrderStatusHistoryRepository;
 import com.app.obsession.order.domain.Order;
 import com.app.obsession.order.domain.OrderLine;
+import com.app.obsession.order.domain.OrderStatus;
+import com.app.obsession.order.domain.OrderStatusHistory;
 import com.app.obsession.payment.application.port.PaymentRepository;
 import com.app.obsession.payment.domain.Payment;
 import com.app.obsession.payment.exception.PaymentErrorCode;
@@ -28,6 +31,7 @@ public class ConfirmTossPaymentProcessor {
     private final PaymentRepository paymentRepository;
     private final TossPaymentClient tossPaymentClient;
     private final OutboxEventService outboxEventService;
+    private final OrderStatusHistoryRepository orderStatusHistoryRepository;
 
     @Transactional
     public Long confirm(
@@ -74,7 +78,17 @@ public class ConfirmTossPaymentProcessor {
         }
 
         confirmStocks(order);
+        OrderStatus fromStatus = order.getStatus();
         order.markPaid();
+
+        orderStatusHistoryRepository.save(
+                OrderStatusHistory.record(
+                        order.getId(),
+                        fromStatus,
+                        OrderStatus.PAID,
+                        "PAYMENT_APPROVED"
+                )
+        );
 
         payment.approve(
                 response.paymentKey(),
@@ -126,7 +140,18 @@ public class ConfirmTossPaymentProcessor {
     }
 
     private void failPayment(Order order, Payment payment) {
+        OrderStatus fromStatus = order.getStatus();
         order.markFailed();
+
+        orderStatusHistoryRepository.save(
+                OrderStatusHistory.record(
+                        order.getId(),
+                        fromStatus,
+                        OrderStatus.FAILED,
+                        "PAYMENT_FAILED"
+                )
+        );
+
         payment.fail();
 
         try {
