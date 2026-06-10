@@ -4,10 +4,12 @@ import com.app.obsession.global.response.CommonResponse;
 import com.app.obsession.global.response.PageResponse;
 import com.app.obsession.global.security.auth.CustomUserDetails;
 import com.app.obsession.order.application.CancelOrderService;
+import com.app.obsession.order.application.CancelPaidOrderService;
 import com.app.obsession.order.application.CreateOrderService;
 import com.app.obsession.order.application.GetOrderDetailService;
 import com.app.obsession.order.application.GetOrderListService;
 import com.app.obsession.order.domain.Order;
+import com.app.obsession.order.presentation.dto.CancelPaidOrderRequest;
 import com.app.obsession.order.presentation.dto.CreateOrderRequest;
 import com.app.obsession.order.presentation.dto.CreateOrderResponse;
 import com.app.obsession.order.presentation.dto.OrderDetailResponse;
@@ -38,6 +40,7 @@ public class OrderController {
     private final GetOrderListService getOrderListService;
     private final GetOrderDetailService getOrderDetailService;
     private final CancelOrderService cancelOrderService;
+    private final CancelPaidOrderService cancelPaidOrderService;
 
     @PostMapping
     public CommonResponse<CreateOrderResponse> create(
@@ -105,6 +108,21 @@ public class OrderController {
         );
 
         return CommonResponse.success("주문 취소에 성공했습니다.");
+    }
+
+    @PostMapping("/{orderId}/cancel-paid")
+    public CommonResponse<Void> cancelPaid(
+            @PathVariable Long orderId,
+            @Valid @RequestBody CancelPaidOrderRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        cancelPaidOrderService.cancel(
+                orderId,
+                userDetails.getMemberId(),
+                request.cancelReason()
+        );
+
+        return CommonResponse.success("결제 완료 주문 취소에 성공했습니다.");
     }
 
 }

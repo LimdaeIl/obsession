@@ -26,7 +26,8 @@ public enum PaymentErrorCode implements ErrorCode {
 
     ONLY_READY_PAYMENT_CAN_BE_APPROVED(HttpStatus.BAD_REQUEST, "결제: 준비 상태의 결제만 승인 처리할 수 있습니다."),
     ONLY_READY_PAYMENT_CAN_BE_FAILED(HttpStatus.BAD_REQUEST, "결제: 준비 상태의 결제만 실패 처리할 수 있습니다."),
-    ONLY_APPROVED_PAYMENT_CAN_BE_CANCELED(HttpStatus.BAD_REQUEST, "결제: 승인 완료된 결제만 취소 처리할 수 있습니다.");
+    ONLY_APPROVED_PAYMENT_CAN_BE_CANCELED(HttpStatus.BAD_REQUEST, "결제: 승인 완료된 결제만 취소 처리할 수 있습니다."),
+    PAYMENT_CANCEL_FAILED(HttpStatus.BAD_GATEWAY, "결제: 결제 취소 요청에 실패했습니다.");
 
     private final HttpStatus httpStatus;
     private final String messageTemplate;
