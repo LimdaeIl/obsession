@@ -19,7 +19,12 @@ public class IdempotencyRepository {
         return jpaIdempotencyRepository.save(record);
     }
 
+    public IdempotencyRecord saveAndFlush(IdempotencyRecord record) {
+        return jpaIdempotencyRepository.saveAndFlush(record);
+    }
+
     public int deleteExpired(LocalDateTime now) {
         return jpaIdempotencyRepository.deleteExpired(now);
     }
 }
+

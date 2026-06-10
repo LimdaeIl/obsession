@@ -1,7 +1,5 @@
 package com.app.obsession.global.idempotency;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Clock;
@@ -9,9 +7,8 @@ import java.time.LocalDateTime;
 import java.util.HexFormat;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 @RequiredArgsConstructor
 @Service
@@ -21,10 +18,10 @@ public class IdempotencyService {
     private static final int TTL_HOURS = 24;
 
     private final IdempotencyRepository idempotencyRepository;
+    private final IdempotencyTransactionService idempotencyTransactionService;
     private final ObjectMapper objectMapper;
     private final Clock clock;
 
-    @Transactional
     public <T> T execute(
             String idempotencyKey,
             Object request,
@@ -41,7 +38,6 @@ public class IdempotencyService {
                 .orElseGet(() -> executeNewRequest(
                         idempotencyKey,
                         requestHash,
-                        responseType,
                         supplier,
                         now
                 ));
@@ -69,10 +65,6 @@ public class IdempotencyService {
             return deserialize(record.getResponseBody(), responseType);
         }
 
-        if (record.isCompleted()) {
-            return deserialize(record.getResponseBody(), responseType);
-        }
-
         if (record.isFailed()) {
             throw new IdempotencyException(IdempotencyErrorCode.IDEMPOTENCY_REQUEST_FAILED);
         }
@@ -83,28 +75,26 @@ public class IdempotencyService {
     private <T> T executeNewRequest(
             String idempotencyKey,
             String requestHash,
-            Class<T> responseType,
             Supplier<T> supplier,
             LocalDateTime now
     ) {
-        IdempotencyRecord record = IdempotencyRecord.processing(
+        idempotencyTransactionService.createProcessing(
                 idempotencyKey,
                 requestHash,
                 now.plusHours(TTL_HOURS)
         );
 
         try {
-            idempotencyRepository.saveAndFlush(record);
-        } catch (DataIntegrityViolationException e) {
-            throw new IdempotencyException(IdempotencyErrorCode.IDEMPOTENCY_REQUEST_PROCESSING);
-        }
-
-        try {
             T response = supplier.get();
-            record.complete(serialize(response));
+
+            idempotencyTransactionService.complete(
+                    idempotencyKey,
+                    serialize(response)
+            );
+
             return response;
         } catch (RuntimeException e) {
-            record.fail();
+            idempotencyTransactionService.fail(idempotencyKey);
             throw e;
         }
     }
@@ -134,7 +124,7 @@ public class IdempotencyService {
     private String serialize(Object object) {
         try {
             return objectMapper.writeValueAsString(object);
-        } catch (JsonProcessingException e) {
+        } catch (Exception e) {
             throw new IllegalStateException("Failed to serialize idempotency object.", e);
         }
     }
@@ -142,7 +132,7 @@ public class IdempotencyService {
     private <T> T deserialize(String json, Class<T> responseType) {
         try {
             return objectMapper.readValue(json, responseType);
-        } catch (JsonProcessingException e) {
+        } catch (Exception e) {
             throw new IllegalStateException("Failed to deserialize idempotency response.", e);
         }
     }
