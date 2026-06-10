@@ -114,9 +114,11 @@ public class OrderController {
     public CommonResponse<Void> cancelPaid(
             @PathVariable Long orderId,
             @Valid @RequestBody CancelPaidOrderRequest request,
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestHeader(name = "Idempotency-Key") String idempotencyKey
     ) {
         cancelPaidOrderService.cancel(
+                idempotencyKey,
                 orderId,
                 userDetails.getMemberId(),
                 request.cancelReason()
