@@ -119,4 +119,10 @@ public class Order extends BaseAuditEntity {
         this.status = OrderStatus.CANCELED;
     }
 
+    public void validateCreatable() {
+        if (orderLines.isEmpty()) {
+            throw new OrderException(OrderErrorCode.EMPTY_ORDER_LINES);
+        }
+    }
+
 }

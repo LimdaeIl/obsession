@@ -12,6 +12,8 @@ import com.app.obsession.product.domain.Product;
 import com.app.obsession.product.domain.ProductStock;
 import com.app.obsession.product.exception.ProductErrorCode;
 import com.app.obsession.product.exception.ProductException;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,13 +26,19 @@ public class CreateOrderProcessor {
     private final ProductRepository productRepository;
     private final ProductStockRepository productStockRepository;
     private final OrderStatusHistoryRepository orderStatusHistoryRepository;
+    private static final String ORDER_CREATED_REASON = "ORDER_CREATED";
 
     @Transactional
     public Long create(CreateOrderCommand command) {
         Order order = Order.create(command.memberId());
 
-        for (CreateOrderCommand.OrderLineCommand line : command.orderLines()) {
-            Product product = productRepository.findById(line.productId())
+        Map<Long, Integer> orderLineQuantities = mergeOrderLines(command);
+
+        for (Map.Entry<Long, Integer> entry : orderLineQuantities.entrySet()) {
+            Long productId = entry.getKey();
+            int quantity = entry.getValue();
+
+            Product product = productRepository.findById(productId)
                     .orElseThrow(() -> new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND));
 
             if (!product.getStatus().canSell()) {
@@ -38,28 +46,42 @@ public class CreateOrderProcessor {
             }
 
             ProductStock stock = productStockRepository.findByProductId(product.getId())
-                    .orElseThrow(() -> new ProductException(ProductErrorCode.PRODUCT_STOCK_NOT_FOUND));
+                    .orElseThrow(
+                            () -> new ProductException(ProductErrorCode.PRODUCT_STOCK_NOT_FOUND));
 
-            stock.reserve(line.quantity());
+            stock.reserve(quantity);
 
             order.addOrderLine(
                     product.getId(),
                     product.getName(),
                     product.getPrice(),
-                    line.quantity()
+                    quantity
             );
         }
 
+        order.validateCreatable();
+
         Order savedOrder = orderRepository.save(order);
+
         orderStatusHistoryRepository.save(
                 OrderStatusHistory.record(
                         savedOrder.getId(),
                         null,
                         OrderStatus.CREATED,
-                        "ORDER_CREATED"
+                        ORDER_CREATED_REASON
                 )
         );
 
         return savedOrder.getId();
+    }
+
+    private Map<Long, Integer> mergeOrderLines(CreateOrderCommand command) {
+        return command.orderLines()
+                .stream()
+                .collect(Collectors.toMap(
+                        CreateOrderCommand.OrderLineCommand::productId,
+                        CreateOrderCommand.OrderLineCommand::quantity,
+                        Integer::sum
+                ));
     }
 }
