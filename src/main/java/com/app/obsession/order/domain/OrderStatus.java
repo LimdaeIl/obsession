@@ -9,6 +9,7 @@ public enum OrderStatus {
 
     CREATED("주문 생성"),
     PAID("결제 완료"),
+    CANCEL_REQUESTED("주문 취소 요청"),
     CANCELED("주문 취소"),
     FAILED("주문 실패");
 

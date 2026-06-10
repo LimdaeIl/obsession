@@ -90,12 +90,24 @@ public class Payment extends BaseAuditEntity {
         this.status = PaymentStatus.FAILED;
     }
 
-    public void cancel() {
+    public void requestCancel() {
         if (this.status != PaymentStatus.APPROVED) {
             throw new PaymentException(PaymentErrorCode.ONLY_APPROVED_PAYMENT_CAN_BE_CANCELED);
         }
 
+        this.status = PaymentStatus.CANCEL_REQUESTED;
+    }
+
+    public void cancel() {
+        if (this.status != PaymentStatus.CANCEL_REQUESTED) {
+            throw new PaymentException(PaymentErrorCode.ONLY_APPROVED_PAYMENT_CAN_BE_CANCELED);
+        }
+
         this.status = PaymentStatus.CANCELED;
+    }
+
+    public boolean isCancelRequested() {
+        return this.status == PaymentStatus.CANCEL_REQUESTED;
     }
 
     public boolean isReady() {

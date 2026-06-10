@@ -1,7 +1,14 @@
 package com.app.obsession.global.outbox;
 
 import com.app.obsession.global.entity.BaseTimeEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -69,7 +76,9 @@ public class OutboxEvent extends BaseTimeEntity {
     ) {
         this.retryCount++;
         this.nextRetryAt = nextRetryAt;
-        this.lastErrorMessage = errorMessage;
+        this.lastErrorMessage = errorMessage == null
+                ? null
+                : errorMessage.substring(0, Math.min(errorMessage.length(), 1000));
     }
 
     public boolean isRetryDue(LocalDateTime now) {

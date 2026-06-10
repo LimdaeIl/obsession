@@ -21,15 +21,10 @@ public class OutboxEventProcessingService {
 
     @Transactional
     public void processPendingEvents() {
-        List<OutboxEvent> events = outboxEventRepository.findPendingEvents();
-
         LocalDateTime now = LocalDateTime.now(clock);
+        List<OutboxEvent> events = outboxEventRepository.findRetryDuePendingEvents(now);
 
         for (OutboxEvent event : events) {
-            if (!event.isRetryDue(now)) {
-                continue;
-            }
-
             process(event);
         }
     }
