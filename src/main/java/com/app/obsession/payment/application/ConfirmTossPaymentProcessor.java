@@ -1,5 +1,6 @@
 package com.app.obsession.payment.application;
 
+import com.app.obsession.global.outbox.OutboxEventService;
 import com.app.obsession.order.application.port.OrderRepository;
 import com.app.obsession.order.domain.Order;
 import com.app.obsession.order.domain.OrderLine;
@@ -26,6 +27,7 @@ public class ConfirmTossPaymentProcessor {
     private final ProductStockRepository productStockRepository;
     private final PaymentRepository paymentRepository;
     private final TossPaymentClient tossPaymentClient;
+    private final OutboxEventService outboxEventService;
 
     @Transactional
     public Long confirm(
@@ -130,6 +132,16 @@ public class ConfirmTossPaymentProcessor {
         try {
             releaseStocks(order);
         } catch (RuntimeException e) {
+            outboxEventService.savePending(
+                    "STOCK_RELEASE_FAILED",
+                    """
+                            {
+                              "orderId": %d,
+                              "paymentId": %d
+                            }
+                            """.formatted(order.getId(), payment.getId())
+            );
+
             log.warn(
                     "Failed to release stocks for orderId={}, paymentId={}",
                     order.getId(),
@@ -138,6 +150,7 @@ public class ConfirmTossPaymentProcessor {
             );
         }
     }
+
 
     private void validateDuplicatePaymentKey(String paymentKey, Payment currentPayment) {
         paymentRepository.findByPaymentKey(paymentKey)
