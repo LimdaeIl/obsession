@@ -43,4 +43,8 @@ public class OutboxEvent extends BaseTimeEntity {
     public void markFailed() {
         this.status = OutboxStatus.FAILED;
     }
+
+    public boolean isPending() {
+        return this.status == OutboxStatus.PENDING;
+    }
 }
