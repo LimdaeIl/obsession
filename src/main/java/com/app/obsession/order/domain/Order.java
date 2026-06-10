@@ -83,6 +83,14 @@ public class Order extends BaseAuditEntity {
         this.status = OrderStatus.PAID;
     }
 
+    public void markFailed() {
+        if (this.status != OrderStatus.CREATED) {
+            throw new OrderException(OrderErrorCode.ONLY_CREATED_ORDER_CAN_BE_FAILED);
+        }
+
+        this.status = OrderStatus.FAILED;
+    }
+
     public boolean isPayableBy(Long memberId) {
         return isOwnedBy(memberId) && this.status == OrderStatus.CREATED;
     }

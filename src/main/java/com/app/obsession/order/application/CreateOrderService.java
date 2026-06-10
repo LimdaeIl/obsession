@@ -1,5 +1,6 @@
 package com.app.obsession.order.application;
 
+import com.app.obsession.global.idempotency.IdempotencyService;
 import com.app.obsession.global.lock.DistributedLockExecutor;
 import com.app.obsession.global.redis.RedisKey;
 import com.app.obsession.order.application.command.CreateOrderCommand;
@@ -20,6 +21,7 @@ public class CreateOrderService {
     private final DistributedLockExecutor distributedLockExecutor;
     private final RedisKey redisKey;
     private final CreateOrderProcessor createOrderProcessor;
+    private final IdempotencyService idempotencyService;
 
     public Long create(CreateOrderCommand command) {
         validate(command);
@@ -32,6 +34,15 @@ public class CreateOrderService {
                 .toList();
 
         return createWithLocks(productIds, command);
+    }
+
+    public Long create(String idempotencyKey, CreateOrderCommand command) {
+        return idempotencyService.execute(
+                idempotencyKey,
+                command,
+                Long.class,
+                () -> create(command)
+        );
     }
 
     private void validate(CreateOrderCommand command) {
