@@ -3,13 +3,12 @@ package com.app.obsession.order.presentation.controller;
 import com.app.obsession.global.response.CommonResponse;
 import com.app.obsession.global.response.PageResponse;
 import com.app.obsession.global.security.auth.CustomUserDetails;
-import com.app.obsession.order.application.CancelOrderService;
-import com.app.obsession.order.application.CancelPaidOrderService;
+import com.app.obsession.order.application.CancelOrderFacade;
 import com.app.obsession.order.application.CreateOrderService;
 import com.app.obsession.order.application.GetOrderDetailService;
 import com.app.obsession.order.application.GetOrderListService;
 import com.app.obsession.order.domain.Order;
-import com.app.obsession.order.presentation.dto.CancelPaidOrderRequest;
+import com.app.obsession.order.presentation.dto.CancelOrderRequest;
 import com.app.obsession.order.presentation.dto.CreateOrderRequest;
 import com.app.obsession.order.presentation.dto.CreateOrderResponse;
 import com.app.obsession.order.presentation.dto.OrderDetailResponse;
@@ -39,8 +38,7 @@ public class OrderController {
     private final CreateOrderService createOrderService;
     private final GetOrderListService getOrderListService;
     private final GetOrderDetailService getOrderDetailService;
-    private final CancelOrderService cancelOrderService;
-    private final CancelPaidOrderService cancelPaidOrderService;
+    private final CancelOrderFacade cancelOrderFacade;
 
     @PostMapping
     public CommonResponse<CreateOrderResponse> create(
@@ -100,31 +98,18 @@ public class OrderController {
     @PatchMapping("/{orderId}/cancel")
     public CommonResponse<Void> cancel(
             @PathVariable Long orderId,
-            @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
-        cancelOrderService.cancel(
-                orderId,
-                userDetails.getMemberId()
-        );
-
-        return CommonResponse.success("주문 취소에 성공했습니다.");
-    }
-
-    @PostMapping("/{orderId}/cancel-paid")
-    public CommonResponse<Void> cancelPaid(
-            @PathVariable Long orderId,
-            @Valid @RequestBody CancelPaidOrderRequest request,
+            @Valid @RequestBody CancelOrderRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestHeader(name = "Idempotency-Key") String idempotencyKey
     ) {
-        cancelPaidOrderService.cancel(
+        cancelOrderFacade.cancel(
                 idempotencyKey,
                 orderId,
                 userDetails.getMemberId(),
                 request.cancelReason()
         );
 
-        return CommonResponse.success("결제 완료 주문 취소에 성공했습니다.");
+        return CommonResponse.success("주문 취소에 성공했습니다.");
     }
 
 }

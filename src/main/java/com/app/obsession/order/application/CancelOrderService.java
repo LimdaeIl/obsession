@@ -20,19 +20,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class CancelOrderService {
 
-    private final OrderRepository orderRepository;
     private final ProductStockRepository productStockRepository;
     private final OrderStatusHistoryRepository orderStatusHistoryRepository;
 
-    @Transactional
-    public void cancel(Long orderId, Long memberId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new OrderException(OrderErrorCode.ORDER_NOT_FOUND));
-
-        if (!order.isOwnedBy(memberId)) {
-            throw new OrderException(OrderErrorCode.ORDER_ACCESS_DENIED);
-        }
-
+    public void cancel(Order order) {
         for (OrderLine orderLine : order.getOrderLines()) {
             ProductStock stock = productStockRepository.findByProductId(orderLine.getProductId())
                     .orElseThrow(
@@ -54,3 +45,4 @@ public class CancelOrderService {
         );
     }
 }
+
