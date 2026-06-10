@@ -107,6 +107,16 @@ public class ProductStock extends BaseAuditEntity {
         this.soldQuantity += quantity;
     }
 
+    public void restoreSold(int quantity) {
+        validatePositiveQuantity(quantity);
+
+        if (this.soldQuantity < quantity) {
+            throw new ProductException(ProductErrorCode.CANNOT_RESTORE_MORE_THAN_SOLD_STOCK);
+        }
+
+        this.soldQuantity -= quantity;
+    }
+
     private static void validateProductId(Long productId) {
         if (productId == null || productId <= 0) {
             throw new ProductException(ProductErrorCode.INVALID_PRODUCT_ID);

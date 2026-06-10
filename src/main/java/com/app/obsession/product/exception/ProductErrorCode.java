@@ -37,15 +37,18 @@ public enum ProductErrorCode implements ErrorCode {
     INVALID_STOCK_QUANTITY(HttpStatus.BAD_REQUEST, "상품: 재고 수량은 0 이상이어야 합니다."),
     INVALID_ORDER_QUANTITY(HttpStatus.BAD_REQUEST, "상품: 수량은 1 이상이어야 합니다."),
     INSUFFICIENT_STOCK(HttpStatus.BAD_REQUEST, "상품: 재고가 부족합니다."),
-    CANNOT_DECREASE_MORE_THAN_AVAILABLE_STOCK(HttpStatus.BAD_REQUEST, "상품: 판매 가능 재고보다 많이 차감할 수 없습니다."),
+    CANNOT_DECREASE_MORE_THAN_AVAILABLE_STOCK(HttpStatus.BAD_REQUEST,
+            "상품: 판매 가능 재고보다 많이 차감할 수 없습니다."),
     CANNOT_RELEASE_MORE_THAN_RESERVED_STOCK(HttpStatus.BAD_REQUEST, "상품: 예약 재고보다 많이 해제할 수 없습니다."),
-    CANNOT_CONFIRM_MORE_THAN_RESERVED_STOCK(HttpStatus.BAD_REQUEST, "상품: 예약 재고보다 많이 판매 확정할 수 없습니다."),
+    CANNOT_CONFIRM_MORE_THAN_RESERVED_STOCK(HttpStatus.BAD_REQUEST,
+            "상품: 예약 재고보다 많이 판매 확정할 수 없습니다."),
     ON_SALE_PRODUCT_REQUIRES_STOCK(HttpStatus.BAD_REQUEST, "상품: 판매중 상품은 재고가 1개 이상이어야 합니다."),
 
     PRODUCT_CREATE_FORBIDDEN(HttpStatus.FORBIDDEN, "상품: 상품을 등록할 권한이 없습니다."),
     PRODUCT_UPDATE_FORBIDDEN(HttpStatus.FORBIDDEN, "상품: 상품을 수정할 권한이 없습니다."),
     PRODUCT_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "상품: 상품을 삭제할 권한이 없습니다."),
-    NOT_ON_SALE_PRODUCT(HttpStatus.BAD_REQUEST, "상품: 판매 중인 상품이 아닙니다."),;
+    NOT_ON_SALE_PRODUCT(HttpStatus.BAD_REQUEST, "상품: 판매 중인 상품이 아닙니다."),
+    CANNOT_RESTORE_MORE_THAN_SOLD_STOCK(HttpStatus.BAD_REQUEST, "상품: 판매된 재고보다 많이 복구할 수 없습니다.");
 
     private final HttpStatus httpStatus;
     private final String messageTemplate;

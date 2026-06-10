@@ -24,7 +24,8 @@ public class TossPaymentClient {
     ) {
         this.restClient = restClientBuilder
                 .baseUrl(properties.baseUrl())
-                .defaultHeader(HttpHeaders.AUTHORIZATION, authorizationHeader(properties.secretKey()))
+                .defaultHeader(HttpHeaders.AUTHORIZATION,
+                        authorizationHeader(properties.secretKey()))
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
     }
@@ -54,6 +55,30 @@ public class TossPaymentClient {
             throw new PaymentException(PaymentErrorCode.PAYMENT_CONFIRM_FAILED);
         }
     }
+
+    public TossPaymentCancelResponse cancel(
+            String paymentKey,
+            String cancelReason
+    ) {
+        try {
+            return restClient.post()
+                    .uri("/v1/payments/{paymentKey}/cancel", paymentKey)
+                    .body(Map.of(
+                            "cancelReason", cancelReason
+                    ))
+                    .retrieve()
+                    .body(TossPaymentCancelResponse.class);
+
+        } catch (HttpStatusCodeException e) {
+            log.warn("Toss payment cancel failed. status={}, body={}",
+                    e.getStatusCode(),
+                    e.getResponseBodyAsString()
+            );
+
+            throw new PaymentException(PaymentErrorCode.PAYMENT_CANCEL_FAILED);
+        }
+    }
+
 
     private static String authorizationHeader(String secretKey) {
         String credential = secretKey + ":";

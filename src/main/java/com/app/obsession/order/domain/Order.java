@@ -68,8 +68,8 @@ public class Order extends BaseAuditEntity {
     }
 
     public void cancel() {
-        if (this.status != OrderStatus.CREATED) {
-            throw new OrderException(OrderErrorCode.ONLY_CREATED_ORDER_CAN_BE_CANCELED);
+        if (this.status != OrderStatus.CREATED && this.status != OrderStatus.PAID) {
+            throw new OrderException(OrderErrorCode.ONLY_CANCELABLE_ORDER_CAN_BE_CANCELED);
         }
 
         this.status = OrderStatus.CANCELED;
