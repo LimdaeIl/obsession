@@ -41,7 +41,7 @@ public class CreateOrderProcessor {
             Product product = productRepository.findById(productId)
                     .orElseThrow(() -> new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND));
 
-            if (!product.getStatus().canSell()) {
+            if (product.getStatus().canSell()) {
                 throw new ProductException(ProductErrorCode.NOT_ON_SALE_PRODUCT);
             }
 
