@@ -17,8 +17,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
-@Table(name = "v1_product_images")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "v1_product_images")
 @Entity
 public class ProductImage extends BaseAuditEntity {
 
@@ -45,7 +45,6 @@ public class ProductImage extends BaseAuditEntity {
         this.imageUrl = imageUrl;
         this.sortOrder = sortOrder;
     }
-
     public static ProductImage create(Product product, String imageUrl, int sortOrder) {
         return new ProductImage(product, imageUrl, sortOrder);
     }

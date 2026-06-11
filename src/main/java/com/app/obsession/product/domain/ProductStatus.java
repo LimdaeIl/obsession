@@ -19,7 +19,7 @@ public enum ProductStatus {
     }
 
     public boolean canSell() {
-        return this == ON_SALE;
+        return this != ON_SALE;
     }
 
     public boolean canUseAsInitialStatus() {

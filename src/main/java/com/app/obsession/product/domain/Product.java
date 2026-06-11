@@ -147,7 +147,7 @@ public class Product extends BaseAuditEntity {
     }
 
     public boolean isOwnedBy(Long memberId) {
-        return memberId != null && this.sellerId.equals(memberId);
+        return this.sellerId.equals(memberId);
     }
 
     private static void validateSellerId(Long sellerId) {

@@ -43,8 +43,8 @@ public class ProductController {
     private final UpdateProductService updateProductService;
     private final DeleteProductService deleteProductService;
 
-    @PostMapping("/register")
-    public CommonResponse<RegisterProductResponse> register(
+    @PostMapping("/create")
+    public CommonResponse<RegisterProductResponse> create(
             @Valid @RequestBody CreateProductRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
