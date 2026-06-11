@@ -61,11 +61,15 @@ public class CreateProductService {
 
     private void validate(CreateProductCommand command) {
         if (command == null) {
-            throw new ProductException(ProductErrorCode.INVALID_PRODUCT);
+            throw new ProductException(ProductErrorCode.INVALID_PRODUCT_REQUEST);
         }
 
         if (command.actor() == null || !command.actor().canCreateProduct()) {
             throw new ProductException(ProductErrorCode.PRODUCT_CREATE_FORBIDDEN);
+        }
+
+        if (command.status() == null) {
+            throw new ProductException(ProductErrorCode.INVALID_PRODUCT_STATUS);
         }
 
         if (command.status() == ProductStatus.ON_SALE && command.initialStock() <= 0) {
