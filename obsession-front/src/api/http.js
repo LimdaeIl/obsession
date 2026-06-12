@@ -40,7 +40,8 @@ http.interceptors.response.use(
           !originalRequest._retry &&
           !originalRequest.url.includes("/api/v1/auth/login") &&
           !originalRequest.url.includes("/api/v1/auth/signup") &&
-          !originalRequest.url.includes("/api/v1/auth/reissue")
+          !originalRequest.url.includes("/api/v1/auth/reissue") &&
+        !originalRequest.url.includes("/api/v1/auth/oauth/kakao/callback")
       ) {
         originalRequest._retry = true;
 

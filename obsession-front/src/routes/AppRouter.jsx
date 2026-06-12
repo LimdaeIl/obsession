@@ -1,4 +1,4 @@
-import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
+import {BrowserRouter, Link, Route, Routes} from "react-router-dom";
 import LoginPage from "../pages/LoginPage";
 import SignupPage from "../pages/SignupPage";
 import ProductListPage from "../pages/ProductListPage";
@@ -6,14 +6,15 @@ import ProductDetailPage from "../pages/ProductDetailPage";
 import OrderDetailPage from "../pages/OrderDetailPage";
 import TossSuccessPage from "../pages/TossSuccessPage";
 import TossFailPage from "../pages/TossFailPage";
-import { useAuth } from "../context/AuthContext";
+import {useAuth} from "../context/AuthContext";
+import KakaoCallbackPage from "../pages/KakaoCallbackPage";
 
 export default function AppRouter() {
-  const { user, isLoggedIn, logout, loading } = useAuth();
+  const {user, isLoggedIn, logout, loading} = useAuth();
 
   return (
       <BrowserRouter>
-        <nav style={{ display: "flex", gap: 12, padding: 16 }}>
+        <nav style={{display: "flex", gap: 12, padding: 16}}>
           <Link to="/">상품 목록</Link>
 
           {!loading && !isLoggedIn && (
@@ -32,13 +33,14 @@ export default function AppRouter() {
         </nav>
 
         <Routes>
-          <Route path="/" element={<ProductListPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="/products/:productId" element={<ProductDetailPage />} />
-          <Route path="/orders/:orderId" element={<OrderDetailPage />} />
-          <Route path="/payments/success" element={<TossSuccessPage />} />
-          <Route path="/payments/fail" element={<TossFailPage />} />
+          <Route path="/" element={<ProductListPage/>}/>
+          <Route path="/login" element={<LoginPage/>}/>
+          <Route path="/signup" element={<SignupPage/>}/>
+          <Route path="/products/:productId" element={<ProductDetailPage/>}/>
+          <Route path="/orders/:orderId" element={<OrderDetailPage/>}/>
+          <Route path="/payments/success" element={<TossSuccessPage/>}/>
+          <Route path="/payments/fail" element={<TossFailPage/>}/>
+          <Route path="/oauth/kakao/callback" element={<KakaoCallbackPage/>}/>
         </Routes>
       </BrowserRouter>
   );

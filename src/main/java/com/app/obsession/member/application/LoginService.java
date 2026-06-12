@@ -44,6 +44,11 @@ public class LoginService {
             throw new MemberException(MemberErrorCode.INVALID_LOGIN);
         }
 
+        return issueToken(member);
+    }
+
+    @Transactional
+    public LoginResult issueToken(Member member) {
         JwtClaims jwtClaims = JwtClaims.of(member);
 
         String accessToken = jwtProvider.createAccessToken(jwtClaims);

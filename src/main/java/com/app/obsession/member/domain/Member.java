@@ -84,6 +84,19 @@ public class Member extends BaseAuditEntity {
         );
     }
 
+    public static Member createSocialCustomer(
+            String name,
+            String email,
+            String phone
+    ) {
+        return new Member(
+                new Profile(name, email, phone),
+                Password.empty(),
+                null,
+                MemberRole.CUSTOMER
+        );
+    }
+
     public void changeProfile(String name, String phone) {
         this.profile = this.profile.change(name, phone);
     }

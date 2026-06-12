@@ -25,3 +25,11 @@ export const logout = async () => {
   return response.data;
 };
 
+
+export const kakaoLogin = async (code) => {
+  const response = await http.get("/api/v1/auth/oauth/kakao/callback", {
+    params: { code },
+  });
+
+  return response.data;
+};

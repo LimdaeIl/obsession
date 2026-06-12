@@ -46,7 +46,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/v1/auth/signup",
                                 "/api/v1/auth/login",
-                                "/api/v1/auth/reissue"
+                                "/api/v1/auth/reissue",
+                                "/api/v1/auth/oauth/kakao/callback"
                         ).permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/business/**").hasAnyRole("BUSINESS", "ADMIN")

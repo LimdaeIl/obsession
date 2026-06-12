@@ -3,6 +3,7 @@ package com.app.obsession.member.presentation.controller;
 import com.app.obsession.global.response.CommonResponse;
 import com.app.obsession.global.security.auth.CustomUserDetails;
 import com.app.obsession.global.security.jwt.RefreshTokenCookieProvider;
+import com.app.obsession.member.application.KakaoLoginService;
 import com.app.obsession.member.application.LoginService;
 import com.app.obsession.member.application.LogoutService;
 import com.app.obsession.member.application.ReissueTokenService;
@@ -22,10 +23,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -38,6 +41,7 @@ public class AuthController {
     private final LoginService loginService;
     private final ReissueTokenService reissueTokenService;
     private final LogoutService logoutService;
+    private final KakaoLoginService kakaoLoginService;
 
     private final RefreshTokenCookieProvider refreshTokenCookieProvider;
 
@@ -74,7 +78,7 @@ public class AuthController {
 
     @PostMapping("/reissue")
     public CommonResponse<TokenResponse> reissue(
-            @CookieValue("refreshToken") String refreshToken,
+            @CookieValue(value = "refreshToken", required = false) String refreshToken,
             HttpServletResponse servletResponse
     ) {
         ReissueTokenResult result = reissueTokenService.reissue(refreshToken);
@@ -105,6 +109,24 @@ public class AuthController {
         return CommonResponse.success(
                 "로그아웃: 로그아웃에 성공했습니다.",
                 null
+        );
+    }
+
+    @GetMapping("/oauth/kakao/callback")
+    public CommonResponse<LoginResponse> kakaoLogin(
+            @RequestParam("code") String code,
+            HttpServletResponse response
+    ) {
+        LoginResult result = kakaoLoginService.login(code);
+
+        ResponseCookie refreshCookie =
+                refreshTokenCookieProvider.createCookie(result.refreshToken());
+
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+
+        return CommonResponse.success(
+                "로그인: 카카오 로그인에 성공했습니다.",
+                LoginResponse.of(result.memberId(), result.accessToken())
         );
     }
 }

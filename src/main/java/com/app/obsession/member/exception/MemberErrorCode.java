@@ -27,7 +27,10 @@ public enum MemberErrorCode implements ErrorCode {
 
     INVALID_SOCIAL_MEMBER_ID(HttpStatus.BAD_REQUEST, "회원: 회원 ID는 필수입니다."),
     INVALID_SOCIAL_PROVIDER(HttpStatus.BAD_REQUEST, "회원: 소셜 Provider는 필수입니다."),
-    INVALID_SOCIAL_PROVIDER_ID(HttpStatus.BAD_REQUEST, "회원: 소셜 Provider ID는 필수입니다.");
+    INVALID_SOCIAL_PROVIDER_ID(HttpStatus.BAD_REQUEST, "회원: 소셜 Provider ID는 필수입니다."),
+    ALREADY_LINKED_SOCIAL_ACCOUNT(HttpStatus.CONFLICT, "회원: 이미 다른 소셜 계정이 연동되어 있습니다."),
+    SOCIAL_EMAIL_NOT_PROVIDED(HttpStatus.BAD_REQUEST, "회원: 소셜 계정에서 이메일을 제공하지 않았습니다."),
+    SOCIAL_EMAIL_NOT_VERIFIED(HttpStatus.BAD_REQUEST, "회원: 검증되지 않은 소셜 이메일입니다."),;
 
     private final HttpStatus httpStatus;
     private final String messageTemplate;

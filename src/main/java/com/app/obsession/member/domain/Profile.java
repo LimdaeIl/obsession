@@ -19,7 +19,7 @@ public class Profile {
     @Column(name = "email", nullable = false, unique = true, length = 100)
     private String email;
 
-    @Column(name = "phone", nullable = false, length = 11)
+    @Column(name = "phone", length = 11)
     private String phone;
 
     public Profile(String name, String email, String phone) {
@@ -42,9 +42,9 @@ public class Profile {
             throw new MemberException(MemberErrorCode.INVALID_MEMBER_EMAIL);
         }
 
-        if (phone == null || phone.isBlank()) {
-            throw new MemberException(MemberErrorCode.INVALID_MEMBER_PHONE);
-        }
+//        if (phone == null || phone.isBlank()) {
+//            throw new MemberException(MemberErrorCode.INVALID_MEMBER_PHONE);
+//        }
     }
 }
 
