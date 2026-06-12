@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import {useState} from "react";
+import {Navigate, useNavigate} from "react-router-dom";
+import {useAuth} from "../context/AuthContext";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -11,7 +11,13 @@ export default function LoginPage() {
     password: "1234abcd!",
   });
 
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState("");const kakaoLogin = () => {
+    window.location.href = "https://kauth.kakao.com/oauth/authorize" +
+        `?client_id=${import.meta.env.VITE_KAKAO_REST_API_KEY}` +
+        `&redirect_uri=${encodeURIComponent(
+            import.meta.env.VITE_KAKAO_REDIRECT_URI)}` +
+        "&response_type=code";
+  };
 
   if (loading) return <div style={{ padding: 24 }}>확인 중...</div>;
   if (isLoggedIn) return <Navigate to="/" replace />;
@@ -44,6 +50,7 @@ export default function LoginPage() {
           <input name="password" type="password" value={form.password} onChange={change} placeholder="비밀번호" />
           <br />
           <button type="submit">로그인</button>
+          <button type="button" onClick={kakaoLogin}>카카오로 로그인</button>
         </form>
 
         {message && <p>{message}</p>}
