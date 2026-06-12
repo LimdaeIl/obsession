@@ -1,7 +1,9 @@
 package com.app.obsession;
 
 import com.app.obsession.global.redis.RedisKeyProperties;
+import com.app.obsession.global.security.jwt.CookieProperties;
 import com.app.obsession.global.security.jwt.JwtProperties;
+import com.app.obsession.member.infrastructure.external.KakaoOAuthProperties;
 import com.app.obsession.payment.infrastructure.external.TossPaymentProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -10,15 +12,17 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @EnableScheduling
 @EnableConfigurationProperties({
-		JwtProperties.class,
-		RedisKeyProperties.class,
-		TossPaymentProperties.class
+        JwtProperties.class,
+        RedisKeyProperties.class,
+        TossPaymentProperties.class,
+        KakaoOAuthProperties.class,
+        CookieProperties.class
 })
 @SpringBootApplication
 public class ObsessionApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(ObsessionApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(ObsessionApplication.class, args);
+    }
 
 }
