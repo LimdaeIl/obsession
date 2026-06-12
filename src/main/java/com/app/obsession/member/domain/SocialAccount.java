@@ -26,8 +26,8 @@ import lombok.NoArgsConstructor;
                         columnNames = {"social_provider", "social_provider_id"}
                 ),
                 @UniqueConstraint(
-                        name = "uk_social_member_provider",
-                        columnNames = {"member_id", "social_provider"}
+                        name = "uk_social_member",
+                        columnNames = {"member_id"}
                 )
         }
 )
