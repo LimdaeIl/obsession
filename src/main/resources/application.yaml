@@ -47,6 +47,9 @@ jwt:
 app:
   redis:
     key-prefix: ${APP_REDIS_KEY_PREFIX:obsession:local}
+  cookie:
+    secure: ${APP_COOKIE_SECURE:false}
+    same-site: ${APP_COOKIE_SAME_SITE:Lax}
 
 payment:
   toss:
@@ -58,3 +61,9 @@ springdoc:
     enabled: true
   swagger-ui:
     enabled: true
+
+oauth:
+  kakao:
+    client-id: ${KAKAO_REST_API_KEY}
+    redirect-uri: http://localhost:5173/oauth/kakao/callback
+
